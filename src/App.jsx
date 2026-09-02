@@ -4,6 +4,8 @@ import IdentificationGuide from './IdentificationGuide.jsx'
 import ReportingForm from './ReportingForm.jsx'
 import Confirmation from './Confirmation.jsx'
 import PublicMap from './PublicMap.jsx'
+import Dashboard from './Dashboard.jsx'
+import ReportDetail from './ReportDetail.jsx'
 
 function App() {
   return (
@@ -16,6 +18,8 @@ function App() {
           <Link to="/guide">Guide</Link>
           {' | '}
           <Link to="/map">Map</Link>
+          {' | '}
+          <Link to="/dashboard">Dashboard</Link>
         </nav>
       </header>
 
@@ -25,6 +29,8 @@ function App() {
         <Route path="/report" element={<ReportingForm />} />
         <Route path="/confirmation" element={<Confirmation />} />
         <Route path="/map" element={<PublicMap />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard/report/:id" element={<ReportDetail />} />
       </Routes>
     </div>
   )
