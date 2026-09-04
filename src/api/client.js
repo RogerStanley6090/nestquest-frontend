@@ -34,19 +34,28 @@ export const api = {
 }
 
 // ---- Public endpoints ----
+// GET /api/nest-reports/        -> verified reports only, masked location
+// GET /api/nest-reports/{id}/   -> single verified report, masked location
+// POST /api/nest-reports/       -> public submission (includes nested location object)
 export const publicApi = {
   submitReport: (data) => api.post('/api/nest-reports/', data),
   getSpecies: () => api.get('/api/species/'),
-  getVerifiedReports: () => api.get('/api/public/reports/'),
+  getVerifiedReports: () => api.get('/api/nest-reports/'),
+  getVerifiedReport: (id) => api.get(`/api/nest-reports/${id}/`),
 }
 
-// ---- Researcher/Admin endpoints ----
+// ---- Researcher/Admin endpoints (require researcher token) ----
+// GET   /api/researcher/reports/                 -> all reports, any status, exact location
+// GET   /api/researcher/reports/{id}/             -> single report, full detail
+// PATCH /api/researcher/reports/{id}/status_update/
+// POST  /api/researcher/reports/{id}/review/
+// GET   /api/researcher/reports/export/
 export const researcherApi = {
   login: (email, password) => api.post('/api/auth/login/', { email, password }),
   logout: () => api.post('/api/auth/logout/', {}),
   listReports: () => api.get('/api/researcher/reports/'),
   getReport: (id) => api.get(`/api/researcher/reports/${id}/`),
-  updateStatus: (id, status) => api.patch(`/api/researcher/reports/${id}/status/`, { status }),
+  updateStatus: (id, status) => api.patch(`/api/researcher/reports/${id}/status_update/`, { status }),
   addReview: (id, review) => api.post(`/api/researcher/reports/${id}/review/`, review),
   exportReports: () => api.get('/api/researcher/reports/export/'),
 }
