@@ -6,7 +6,7 @@ async function request(path, options = {}) {
 
   const headers = {
     'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(token ? { Authorization: `Token ${token}` } : {}),
     ...options.headers,
   }
 
@@ -45,13 +45,14 @@ export const publicApi = {
 }
 
 // ---- Researcher/Admin endpoints (require researcher token) ----
+// POST  /api/auth/login/  -> body: { username, password }, returns { token, username, role }
 // GET   /api/researcher/reports/                 -> all reports, any status, exact location
 // GET   /api/researcher/reports/{id}/             -> single report, full detail
 // PATCH /api/researcher/reports/{id}/status_update/
 // POST  /api/researcher/reports/{id}/review/
 // GET   /api/researcher/reports/export/
 export const researcherApi = {
-  login: (email, password) => api.post('/api/auth/login/', { email, password }),
+  login: (username, password) => api.post('/api/auth/login/', { username, password }),
   logout: () => api.post('/api/auth/logout/', {}),
   listReports: () => api.get('/api/researcher/reports/'),
   getReport: (id) => api.get(`/api/researcher/reports/${id}/`),

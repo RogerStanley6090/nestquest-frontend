@@ -10,6 +10,15 @@ const MOCK_REPORTS = [
 
 const STATUS_LABELS = { all: 'All', unverified: 'Unverified', verified: 'Verified', needsinfo: 'Needs Info', rejected: 'Rejected' }
 
+function formatLocation(location) {
+  if (!location) return '—'
+  if (typeof location === 'string') return location
+  const lat = location.exact_latitude ?? location.masked_latitude
+  const lng = location.exact_longitude ?? location.masked_longitude
+  if (lat == null || lng == null) return '—'
+  return `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`
+}
+
 function Dashboard() {
   const [reports, setReports] = useState(MOCK_REPORTS)
   const [usingMockData, setUsingMockData] = useState(true)
@@ -65,10 +74,10 @@ function Dashboard() {
           {visibleReports.map((r) => (
             <tr key={r.id}>
               <td>[img]</td>
-              <td>{r.species}</td>
-              <td>{r.location}</td>
-              <td>{r.date}</td>
-              <td>{STATUS_LABELS[r.status]}</td>
+              <td>{r.species || '—'}</td>
+              <td>{formatLocation(r.location)}</td>
+              <td>{r.date || r.created_at || '—'}</td>
+              <td>{STATUS_LABELS[r.status] || r.status || '—'}</td>
               <td><Link to={`/dashboard/report/${r.id}`}>View</Link></td>
             </tr>
           ))}

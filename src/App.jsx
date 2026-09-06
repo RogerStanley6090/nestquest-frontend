@@ -4,6 +4,7 @@ import IdentificationGuide from './IdentificationGuide.jsx'
 import ReportingForm from './ReportingForm.jsx'
 import Confirmation from './Confirmation.jsx'
 import PublicMap from './PublicMap.jsx'
+import Login from './Login.jsx'
 import Dashboard from './Dashboard.jsx'
 import ReportDetail from './ReportDetail.jsx'
 
@@ -19,6 +20,8 @@ function App() {
           {' | '}
           <Link to="/map">Map</Link>
           {' | '}
+          <Link to="/login">Login</Link>
+          {' | '}
           <Link to="/dashboard">Dashboard</Link>
         </nav>
       </header>
@@ -29,6 +32,7 @@ function App() {
         <Route path="/report" element={<ReportingForm />} />
         <Route path="/confirmation" element={<Confirmation />} />
         <Route path="/map" element={<PublicMap />} />
+        <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/dashboard/report/:id" element={<ReportDetail />} />
       </Routes>
