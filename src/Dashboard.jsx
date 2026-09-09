@@ -5,10 +5,10 @@ import { researcherApi } from './api/client.js'
 const MOCK_REPORTS = [
   { id: 1, species: 'Blackbird', location: 'Henderson Park', date: '12 Aug', status: 'unverified' },
   { id: 2, species: 'Fantail', location: 'Botanic Gardens', date: '10 Aug', status: 'verified' },
-  { id: 3, species: 'Unknown', location: 'Karori Reserve', date: '9 Aug', status: 'needsinfo' },
+  { id: 3, species: 'Unknown', location: 'Karori Reserve', date: '9 Aug', status: 'needs_info' },
 ]
 
-const STATUS_LABELS = { all: 'All', unverified: 'Unverified', verified: 'Verified', needsinfo: 'Needs Info', rejected: 'Rejected' }
+const STATUS_LABELS = { all: 'All', unverified: 'Unverified', verified: 'Verified', needs_info: 'Needs Info', rejected: 'Rejected' }
 
 function formatLocation(location) {
   if (!location) return '—'
