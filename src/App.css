@@ -36,3 +36,19 @@
 .nq-button:active:not(:disabled) {
   transform: scale(0.98);
 }
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid #93BB4A;
+  outline-offset: 2px;
+}
+.nq-stat-card {
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.nq-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: #93BB4A !important;
+}

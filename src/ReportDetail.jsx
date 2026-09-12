@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { researcherApi } from './api/client.js'
+import { researcherApi, getPhotoUrl } from './api/client.js'
 
 const BRAND = {
   card: '#173722',
@@ -74,7 +74,7 @@ function ReportDetail() {
   const species = report?.species || 'Unknown'
   const submittedDate = report?.created_at || report?.date || '—'
   const contactEmail = report?.contact_email || '—'
-  const firstPhotoUrl = photos[0]?.storage_path || null
+  const firstPhotoUrl = getPhotoUrl(photos[0]?.storage_path)
   const statusMeta = STATUS_META[status] || STATUS_META.unverified
 
   const labelStyle = { fontSize: 12, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }
@@ -137,7 +137,10 @@ function ReportDetail() {
             </p>
             <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 10, border: `1px solid ${BRAND.border}` }}>
               <MapContainer center={[exactLat, exactLng]} zoom={15} style={{ height: 170, width: '100%' }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; OpenStreetMap contributors'
+                />
                 <Marker position={[exactLat, exactLng]}>
                   <Popup>Exact location</Popup>
                 </Marker>

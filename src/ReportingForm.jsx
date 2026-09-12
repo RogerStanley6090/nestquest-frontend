@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { publicApi } from './api/client.js'
 
-const DEFAULT_CENTER = [-36.8485, 174.7633] // Auckland — only used if geolocation fails/denied
+const DEFAULT_CENTER = [-36.8485, 174.7633]
 
 const SPECIES_ID_MAP = {
   blackbird: 1,
@@ -35,7 +35,7 @@ function ReportingForm() {
 
   const [position, setPosition] = useState(null)
   const [locating, setLocating] = useState(true)
-  const [locationSource, setLocationSource] = useState(null) // 'gps' | 'manual'
+  const [locationSource, setLocationSource] = useState(null)
 
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
@@ -157,7 +157,10 @@ function ReportingForm() {
                   : 'Click on the map to set the nest location.'}
               </p>
               <MapContainer center={position || DEFAULT_CENTER} zoom={15} style={{ height: 250, width: '100%' }}>
-                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; OpenStreetMap contributors'
+                />
                 <LocationPicker position={position} onPick={handleMapClick} />
               </MapContainer>
               {position && (

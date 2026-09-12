@@ -49,3 +49,23 @@ button {
 table {
   width: 100%;
 }
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0F2818;
+}
+::-webkit-scrollbar-thumb {
+  background: #2E5C3E;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #93BB4A;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2E5C3E #0F2818;
+}

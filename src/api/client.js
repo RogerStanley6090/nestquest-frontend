@@ -1,4 +1,11 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'
+const SUPABASE_URL = 'https://znthtkiarluezrpzgcbb.supabase.co'
+const SUPABASE_BUCKET = 'nest_photos'
+
+export function getPhotoUrl(storagePath) {
+  if (!storagePath) return null
+  return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${storagePath}`
+}
 
 async function request(path, options = {}) {
   const url = `${BASE_URL}${path}`
