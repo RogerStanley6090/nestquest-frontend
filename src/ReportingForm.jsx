@@ -4,7 +4,15 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { publicApi } from './api/client.js'
 
-const DEFAULT_CENTER = [-36.8485, 174.7633]
+const DEFAULT_CENTER = [-36.8485, 174.7633] // Auckland — only used if geolocation fails/denied
+
+const SPECIES_ID_MAP = {
+  blackbird: 1,
+  fantail: 2,
+  silvereye: 3,
+  greywarbler: 4,
+  songthrush: 5,
+}
 
 function LocationPicker({ position, onPick }) {
   useMapEvents({
@@ -27,7 +35,7 @@ function ReportingForm() {
 
   const [position, setPosition] = useState(null)
   const [locating, setLocating] = useState(true)
-  const [locationSource, setLocationSource] = useState(null)
+  const [locationSource, setLocationSource] = useState(null) // 'gps' | 'manual'
 
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
@@ -94,6 +102,7 @@ function ReportingForm() {
 
     const payload = {
       ...guideAnswers,
+      species: SPECIES_ID_MAP[guideAnswers.key_result] || null,
       notes,
       contact_email: email || null,
       location: {
@@ -114,8 +123,6 @@ function ReportingForm() {
           console.log('Photo upload response:', photoResponse)
         } catch (photoErr) {
           console.error('Photo upload failed:', photoErr)
-          // Report already saved successfully — don't block the user on a photo failure,
-          // just let them know it didn't attach.
           setError(`Report saved, but the photo could not be uploaded: ${photoErr.message}`)
           setSubmitting(false)
           return

@@ -10,6 +10,20 @@ const MOCK_REPORTS = [
 
 const STATUS_LABELS = { all: 'All', unverified: 'Unverified', verified: 'Verified', needs_info: 'Needs Info', rejected: 'Rejected' }
 
+const SPECIES_NAMES = {
+  1: 'Blackbird',
+  2: 'Fantail / Pīwakawaka',
+  3: 'Silvereye / Tauhou',
+  4: 'Grey Warbler / Riroriro',
+  5: 'Song Thrush',
+}
+
+function formatSpecies(species) {
+  if (species == null) return '—'
+  if (typeof species === 'object') return species.name || '—'
+  return SPECIES_NAMES[species] || `Species #${species}`
+}
+
 function formatLocation(location) {
   if (!location) return '—'
   if (typeof location === 'string') return location
@@ -41,7 +55,7 @@ function Dashboard() {
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter
     const matchesSearch =
       searchTerm.trim() === '' ||
-      (r.species || '').toLowerCase().includes(searchTerm.trim().toLowerCase())
+      formatSpecies(r.species).toLowerCase().includes(searchTerm.trim().toLowerCase())
     return matchesStatus && matchesSearch
   })
 
@@ -90,7 +104,7 @@ function Dashboard() {
           {visibleReports.map((r) => (
             <tr key={r.id}>
               <td>[img]</td>
-              <td>{r.species || '—'}</td>
+              <td>{formatSpecies(r.species)}</td>
               <td>{formatLocation(r.location)}</td>
               <td>{r.date || r.created_at || '—'}</td>
               <td>{STATUS_LABELS[r.status] || r.status || '—'}</td>
