@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import silvereyePhoto from './assets/birds/silvereye.jpg'
+import fantailPhoto from './assets/birds/fantail.jpg'
+import greywarblerPhoto from './assets/birds/greywarbler.jpg'
+import blackbirdPhoto from './assets/birds/blackbird.jpg'
+import songthrushPhoto from './assets/birds/songthrush.jpg'
 
-// Based on NestQuest Identification Key Packet (Rachel, sponsor) —
-// covers silvereye/tauhou, fantail/pīwakawaka, grey warbler/riroriro,
-// blackbird, and song thrush.
+// Based on the updated NestQuest Bird Nest Information packet (Rachel, sponsor)
 
 const SAFETY_MESSAGE =
   'Please do not touch, move, collect, or disturb any nest. If there are eggs, ' +
@@ -24,49 +27,68 @@ const STEPS = [
   },
   {
     key: 'position_type',
-    question: 'Where is the nest positioned?',
-    options: ['In a fork', 'Supported from below / obvious base', 'Hanging / suspended', 'Not sure'],
+    question: 'Where is the nest positioned / attached?',
+    options: ['In a fork', 'Supported from below', 'Hanging / suspended', 'In a hedge/shrub/tree but attachment unclear', 'Not sure'],
   },
   {
     key: 'entrance_visible',
     question: 'Does it have an entrance hole?',
-    options: ['Yes, side entrance', 'No, open top', "Can't tell"],
+    options: ['Yes, side entrance', 'No, open top', "Cannot tell"],
   },
   {
     key: 'inside_visible',
     question: "If visible from your photo, what does the inside look like? (Don't touch or move the nest to check.)",
     options: [
-      'Small delicate cup',
-      'Small cup with obvious base / support',
-      'Large bulky bowl',
-      'Large bowl, smooth / plastered-looking inside',
+      'Small cup with grasses',
+      'Small cup with hair/wool',
+      'Large bulky bowl with grasses',
+      'Large bulky bowl with smooth/plastered-looking inside',
       "Not sure / can't tell",
     ],
   },
 ]
 
 const SPECIES_INFO = {
-  silvereye: { name: 'Silvereye / Tauhou', clue: 'A small, neat cup woven into a fork.' },
-  fantail: { name: 'Fantail / Pīwakawaka', clue: 'A small cup nest with a more obvious base/support.' },
-  greywarbler: { name: 'Grey Warbler / Riroriro', clue: 'A hanging enclosed nest with a side entrance.' },
-  blackbird: { name: 'Blackbird', clue: 'A large, bulky cup nest in a shrub, hedge, or tree.' },
-  songthrush: { name: 'Song Thrush', clue: 'A larger bowl nest with a smooth-looking inner cup.' },
-  unknown: { name: 'Unknown / Other', clue: 'No problem — nest identification can be tricky.' },
+  silvereye: {
+    name: 'Silvereye / Tauhou',
+    clue: 'A small, neat cup woven onto a forked branch.',
+    photo: silvereyePhoto,
+  },
+  fantail: {
+    name: 'Fantail / Pīwakawaka',
+    clue: 'A small cup nest with a more obvious base/support rather than sitting neatly in a fork.',
+    photo: fantailPhoto,
+  },
+  greywarbler: {
+    name: 'Grey Warbler / Riroriro',
+    clue: 'A hanging enclosed nest with a side entrance.',
+    photo: greywarblerPhoto,
+  },
+  blackbird: {
+    name: 'Blackbird',
+    clue: 'A large, bulky cup nest in a shrub, hedge, or tree.',
+    photo: blackbirdPhoto,
+  },
+  songthrush: {
+    name: 'Song Thrush',
+    clue: 'A larger bowl nest with a smooth-looking inner cup.',
+    photo: songthrushPhoto,
+  },
+  unknown: { name: 'Unknown / Other', clue: 'No problem — nest identification can be tricky.', photo: null },
 }
 
 // Priority: shape (dome) > entrance (side) > inside appearance > position > unknown.
-// This mirrors the sponsor's key while keeping the flow as a simple fixed sequence.
 function computeLikelyMatch(answers) {
   if (answers.nest_shape === 'Enclosed dome / hanging pouch') return 'greywarbler'
   if (answers.entrance_visible === 'Yes, side entrance') return 'greywarbler'
 
-  if (answers.inside_visible === 'Small delicate cup') return 'silvereye'
-  if (answers.inside_visible === 'Small cup with obvious base / support') return 'fantail'
-  if (answers.inside_visible === 'Large bulky bowl') return 'blackbird'
-  if (answers.inside_visible === 'Large bowl, smooth / plastered-looking inside') return 'songthrush'
+  if (answers.inside_visible === 'Small cup with grasses') return 'silvereye'
+  if (answers.inside_visible === 'Small cup with hair/wool') return 'fantail'
+  if (answers.inside_visible === 'Large bulky bowl with grasses') return 'blackbird'
+  if (answers.inside_visible === 'Large bulky bowl with smooth/plastered-looking inside') return 'songthrush'
 
   if (answers.position_type === 'In a fork') return 'silvereye'
-  if (answers.position_type === 'Supported from below / obvious base') return 'fantail'
+  if (answers.position_type === 'Supported from below') return 'fantail'
   if (answers.position_type === 'Hanging / suspended') return 'greywarbler'
 
   return 'unknown'
@@ -121,7 +143,6 @@ function IdentificationGuide() {
     })
   }
 
-  // ---- Safety message screen ----
   if (showSafety) {
     return (
       <div>
@@ -132,10 +153,10 @@ function IdentificationGuide() {
     )
   }
 
-  // ---- Result screen ----
   if (showResult) {
-    const match = SPECIES_INFO[computeLikelyMatch(answers)]
-    const isUnknown = computeLikelyMatch(answers) === 'unknown'
+    const matchKey = computeLikelyMatch(answers)
+    const match = SPECIES_INFO[matchKey]
+    const isUnknown = matchKey === 'unknown'
     return (
       <div>
         <h2>{isUnknown ? "That's not my nest result" : 'Likely match result'}</h2>
@@ -147,6 +168,13 @@ function IdentificationGuide() {
         ) : (
           <>
             <h3>Your likely match is: {match.name}</h3>
+            {match.photo && (
+              <img
+                src={match.photo}
+                alt={`Example ${match.name} nest`}
+                style={{ maxWidth: 320, width: '100%', borderRadius: 8, display: 'block', margin: '10px 0' }}
+              />
+            )}
             <p>
               This result is based on your answers about nest shape, size, position, and visible
               features. Nest identification can still be uncertain, so any submitted photos will
@@ -162,7 +190,6 @@ function IdentificationGuide() {
     )
   }
 
-  // ---- Question screen ----
   return (
     <div>
       <p>

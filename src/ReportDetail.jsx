@@ -8,6 +8,7 @@ function ReportDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [report, setReport] = useState(null)
+  const [photos, setPhotos] = useState([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [status, setStatus] = useState('unverified')
@@ -18,6 +19,7 @@ function ReportDetail() {
   useEffect(() => {
     researcherApi.getReport(id)
       .then((data) => {
+        console.log('Report detail response:', data)
         setReport(data)
         setStatus(data.status || 'unverified')
       })
@@ -26,6 +28,15 @@ function ReportDetail() {
         setLoadError(err.message)
       })
       .finally(() => setLoading(false))
+
+    researcherApi.getPhotosForReport(id)
+      .then((data) => {
+        console.log('Photos response:', data)
+        setPhotos(Array.isArray(data) ? data : data.results || [])
+      })
+      .catch((err) => {
+        console.log('Could not load photos:', err.message)
+      })
   }, [id])
 
   async function handleSave() {
@@ -51,6 +62,8 @@ function ReportDetail() {
   const submittedDate = report?.created_at || report?.date || '—'
   const contactEmail = report?.contact_email || '—'
 
+  const firstPhotoUrl = photos[0]?.storage_path || null
+
   return (
     <div>
       <Link to="/dashboard">&larr; Back to Submissions</Link>
@@ -65,9 +78,17 @@ function ReportDetail() {
       <div style={{ display: 'flex', gap: 20 }}>
         <div style={{ flex: 1 }}>
           <p><strong>Photo(s)</strong></p>
-          <div style={{ height: 120, border: '1px solid #999', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            [img]
-          </div>
+          {firstPhotoUrl ? (
+            <img
+              src={firstPhotoUrl}
+              alt="Submitted nest photo"
+              style={{ maxWidth: 320, width: '100%', border: '1px solid #999', display: 'block' }}
+            />
+          ) : (
+            <div style={{ height: 120, border: '1px solid #999', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              [img]
+            </div>
+          )}
           <p><strong>Submitted:</strong> {submittedDate} · {species}</p>
           <p><strong>Contact email (researcher-only):</strong> {contactEmail}</p>
           <label>Notes</label>

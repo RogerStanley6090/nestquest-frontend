@@ -23,6 +23,7 @@ function Dashboard() {
   const [reports, setReports] = useState(MOCK_REPORTS)
   const [usingMockData, setUsingMockData] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
+  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     researcherApi.listReports()
@@ -36,7 +37,13 @@ function Dashboard() {
       })
   }, [])
 
-  const visibleReports = reports.filter((r) => statusFilter === 'all' || r.status === statusFilter)
+  const visibleReports = reports.filter((r) => {
+    const matchesStatus = statusFilter === 'all' || r.status === statusFilter
+    const matchesSearch =
+      searchTerm.trim() === '' ||
+      (r.species || '').toLowerCase().includes(searchTerm.trim().toLowerCase())
+    return matchesStatus && matchesSearch
+  })
 
   return (
     <div>
@@ -46,6 +53,15 @@ function Dashboard() {
           Showing placeholder data — not yet connected to the live API.
         </p>
       )}
+
+      <div style={{ margin: '10px 0' }}>
+        <input
+          type="text"
+          placeholder="Search by species..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
 
       <div style={{ margin: '10px 0' }}>
         {Object.keys(STATUS_LABELS).map((key) => (

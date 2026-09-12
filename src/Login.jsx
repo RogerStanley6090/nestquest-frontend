@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { researcherApi } from './api/client.js'
 
 function Login() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const from = location.state?.from?.pathname || '/dashboard'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
@@ -21,7 +23,7 @@ function Login() {
         throw new Error('Login succeeded but no token found in response — check console log above')
       }
       localStorage.setItem('nq_auth_token', token)
-      navigate('/dashboard')
+      navigate(from, { replace: true })
     } catch (err) {
       setError(`Login failed: ${err.message}`)
     } finally {
