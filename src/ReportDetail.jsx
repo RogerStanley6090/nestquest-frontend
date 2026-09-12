@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { researcherApi, getPhotoUrl } from './api/client.js'
+import { researcherApi } from './api/client.js'
 
 const BRAND = {
   card: '#173722',
@@ -74,7 +74,7 @@ function ReportDetail() {
   const species = report?.species || 'Unknown'
   const submittedDate = report?.created_at || report?.date || '—'
   const contactEmail = report?.contact_email || '—'
-  const firstPhotoUrl = getPhotoUrl(photos[0]?.storage_path)
+  const firstPhotoUrl = photos[0]?.image_url || null
   const statusMeta = STATUS_META[status] || STATUS_META.unverified
 
   const labelStyle = { fontSize: 12, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }
@@ -108,7 +108,7 @@ function ReportDetail() {
               <img
                 src={firstPhotoUrl}
                 alt="Submitted nest"
-                style={{ width: '100%', height: 170, objectFit: 'cover', borderRadius: 10, marginBottom: 18 }}
+                style={{ width: '100%', height: 170, objectFit: 'contain', background: '#0F2818', borderRadius: 10, marginBottom: 18 }}
               />
             ) : (
               <div style={{ background: '#0F2818', border: `1px solid ${BRAND.border}`, borderRadius: 10, height: 170, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
