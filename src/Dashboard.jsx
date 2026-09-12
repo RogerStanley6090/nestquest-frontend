@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { researcherApi, getPhotoUrl } from './api/client.js'
+import { researcherApi } from './api/client.js'
 
 const MOCK_REPORTS = [
   { id: 1, species: 'Blackbird', location: 'Henderson Park', date: '12 Aug', status: 'unverified' },
@@ -47,13 +47,18 @@ const FILTERS = [
 ]
 
 const SORT_COLUMNS = [
+  { key: 'id', label: 'Report #' },
   { key: 'species', label: 'Species' },
   { key: 'location', label: 'Location' },
   { key: 'date', label: 'Date' },
   { key: 'status', label: 'Status' },
 ]
 
+const DEFAULT_SORT_KEY = 'id'
+const DEFAULT_SORT_DIR = 'asc'
+
 function getSortValue(report, key) {
+  if (key === 'id') return report.id
   if (key === 'species') return formatSpecies(report.species).toLowerCase()
   if (key === 'location') return formatLocation(report.location).toLowerCase()
   if (key === 'date') return report.date || report.created_at || ''
@@ -66,8 +71,8 @@ function Dashboard() {
   const [usingMockData, setUsingMockData] = useState(true)
   const [statusFilter, setStatusFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortKey, setSortKey] = useState(null)
-  const [sortDir, setSortDir] = useState('asc')
+  const [sortKey, setSortKey] = useState(DEFAULT_SORT_KEY)
+  const [sortDir, setSortDir] = useState(DEFAULT_SORT_DIR)
 
   useEffect(() => {
     researcherApi.listReports()
@@ -89,6 +94,15 @@ function Dashboard() {
       setSortDir('asc')
     }
   }
+
+  function resetFilters() {
+    setStatusFilter('all')
+    setSearchTerm('')
+    setSortKey(DEFAULT_SORT_KEY)
+    setSortDir(DEFAULT_SORT_DIR)
+  }
+
+  const filtersActive = statusFilter !== 'all' || searchTerm.trim() !== '' || sortKey !== DEFAULT_SORT_KEY || sortDir !== DEFAULT_SORT_DIR
 
   const statusCounts = reports.reduce((acc, r) => {
     acc[r.status] = (acc[r.status] || 0) + 1
@@ -161,15 +175,38 @@ function Dashboard() {
         })}
       </div>
 
-      <div style={{ position: 'relative', maxWidth: 340, margin: '0 0 16px' }}>
-        <i className="ti ti-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 15, color: '#6E8A5E' }} aria-hidden="true"></i>
-        <input
-          type="text"
-          placeholder="Search by species"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          style={{ width: '100%', paddingLeft: 34, background: '#173722', border: '1px solid #2E5C3E', color: '#F5EFD9', borderRadius: 8, height: 38 }}
-        />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', maxWidth: 340, flex: 1 }}>
+          <i className="ti ti-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 15, color: '#6E8A5E' }} aria-hidden="true"></i>
+          <input
+            type="text"
+            placeholder="Search by species"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ width: '100%', paddingLeft: 34, background: '#173722', border: '1px solid #2E5C3E', color: '#F5EFD9', borderRadius: 8, height: 38 }}
+          />
+        </div>
+
+        {filtersActive && (
+          <button
+            onClick={resetFilters}
+            className="nq-view-link"
+            style={{
+              background: 'transparent',
+              border: '1px solid #2E5C3E',
+              color: '#B7C0AC',
+              fontSize: 13,
+              padding: '8px 14px',
+              borderRadius: 8,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            <i className="ti ti-refresh" style={{ fontSize: 14 }} aria-hidden="true"></i>
+            Reset filters
+          </button>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -200,7 +237,6 @@ function Dashboard() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: '1px solid #234A2E' }}>
-              <th style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 500, color: '#8A9483', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Photo</th>
               {SORT_COLUMNS.map((col) => (
                 <th
                   key={col.key}
@@ -219,17 +255,10 @@ function Dashboard() {
           <tbody>
             {visibleReports.map((r, i) => {
               const meta = STATUS_META[r.status] || STATUS_META.unverified
-              const thumbUrl = getPhotoUrl(r.photo_storage_path)
               return (
                 <tr key={r.id} className="nq-row" style={{ borderBottom: i === visibleReports.length - 1 ? 'none' : '1px solid #1F3F28' }}>
                   <td style={{ padding: '12px 16px' }}>
-                    {thumbUrl ? (
-                      <img src={thumbUrl} alt="" style={{ width: 38, height: 38, borderRadius: 8, objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: 38, height: 38, borderRadius: 8, background: '#0F2818', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <i className="ti ti-feather" style={{ fontSize: 16, color: '#4D6B48' }} aria-hidden="true"></i>
-                      </div>
-                    )}
+                    <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 15, color: '#93BB4A' }}>#{r.id}</span>
                   </td>
                   <td style={{ padding: '12px 16px' }}>{formatSpecies(r.species)}</td>
                   <td style={{ padding: '12px 16px', color: '#B7C0AC' }}>{formatLocation(r.location)}</td>
