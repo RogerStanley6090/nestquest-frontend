@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { researcherApi } from './api/client.js'
+import { researcherApi, publicApi } from './api/client.js'
 
 const BRAND = {
   card: '#173722',
@@ -28,15 +28,18 @@ function ReportDetail() {
   const [loadError, setLoadError] = useState(null)
   const [status, setStatus] = useState('unverified')
   const [notes, setNotes] = useState('')
+  const [speciesList, setSpeciesList] = useState([])
+  const [finalSpecies, setFinalSpecies] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
     researcherApi.getReport(id)
-      .then((data) => {
-        setReport(data)
-        setStatus(data.status || 'unverified')
-      })
+        .then((data) => {
+          setReport(data)
+          setStatus(data.status || 'unverified')
+          setFinalSpecies(data.final_species || data.species || '')
+        })
       .catch((err) => {
         console.error('Could not load report:', err.message)
         setLoadError(err.message)
@@ -50,6 +53,14 @@ function ReportDetail() {
       .catch((err) => {
         console.log('Could not load photos:', err.message)
       })
+
+    publicApi.getSpecies()
+        .then((data) => {
+          setSpeciesList(Array.isArray(data) ? data : data.results || [])
+        })
+        .catch((err) => {
+          console.log('Could not load species:', err.message)
+        })
   }, [id])
 
   async function handleSave() {
@@ -57,7 +68,9 @@ function ReportDetail() {
     setError(null)
     try {
       await researcherApi.updateStatus(id, status)
-      await researcherApi.addReview(id, { notes })
+      await researcherApi.addReview(id, {
+        notes,
+        final_species: finalSpecies || null,})
       navigate('/dashboard')
     } catch (err) {
       setError(`Could not save: ${err.message}`)
@@ -118,7 +131,7 @@ function ReportDetail() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
               <p style={{ fontSize: 13, margin: 0 }}><span style={{ color: BRAND.textMuted }}>Submitted</span> &middot; {submittedDate}</p>
-              <p style={{ fontSize: 13, margin: 0 }}><span style={{ color: BRAND.textMuted }}>Species</span> &middot; {species}</p>
+              <p style={{ fontSize: 13, margin: 0 }}><span style={{ color: BRAND.textMuted }}>Suggested species</span> &middot; {report?.species_name || species}</p>
               <p style={{ fontSize: 13, margin: 0 }}><span style={{ color: BRAND.textMuted }}>Contact</span> &middot; {contactEmail}</p>
             </div>
 
@@ -149,6 +162,20 @@ function ReportDetail() {
             <p style={{ fontSize: 12, color: BRAND.textMuted, margin: '0 0 20px' }}>
               {Number(exactLat).toFixed(6)}, {Number(exactLng).toFixed(6)}
             </p>
+
+            <p style={labelStyle}>Final species</p>
+            <select
+                value={finalSpecies}
+                onChange={(e) => setFinalSpecies(e.target.value)}
+                style={{ ...fieldStyle, marginBottom: 18 }}
+            >
+              <option value="">Select species</option>
+              {speciesList.map((species) => (
+                  <option key={species.id} value={species.id}>
+                    {species.name}
+                  </option>
+              ))}
+            </select>
 
             <p style={labelStyle}>Verification status</p>
             <select

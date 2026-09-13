@@ -260,7 +260,7 @@ function Dashboard() {
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 15, color: '#93BB4A' }}>#{r.id}</span>
                   </td>
-                  <td style={{ padding: '12px 16px' }}>{formatSpecies(r.species)}</td>
+                  <td style={{ padding: '12px 16px' }}>{r.final_species_name ||formatSpecies(r.species)}</td>
                   <td style={{ padding: '12px 16px', color: '#B7C0AC' }}>{formatLocation(r.location)}</td>
                   <td style={{ padding: '12px 16px', color: '#B7C0AC' }}>{r.date || r.created_at || '—'}</td>
                   <td style={{ padding: '12px 16px' }}>
