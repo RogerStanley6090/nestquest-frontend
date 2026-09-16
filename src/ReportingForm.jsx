@@ -1,18 +1,36 @@
 import { useState, useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { publicApi } from './api/client.js'
 
 const DEFAULT_CENTER = [-36.8485, 174.7633]
 
-const SPECIES_ID_MAP = {
-  blackbird: 1,
-  fantail: 2,
-  silvereye: 3,
-  greywarbler: 4,
-  songthrush: 5,
+// Maps the identification guide's internal key to a hint used to find the
+// matching species from the real API list (not a hardcoded ID, since IDs
+// can differ between environments/databases).
+const GUIDE_KEY_TO_NAME_HINT = {
+  blackbird: 'blackbird',
+  fantail: 'fantail',
+  silvereye: 'silvereye',
+  greywarbler: 'grey warbler',
+  songthrush: 'song thrush',
 }
+
+const SHAPE_OPTIONS = [
+  'Open cup or bowl',
+  'Enclosed dome / hanging pouch',
+  'Messy cavity / enclosed space',
+  'Not sure',
+]
+
+const PLACEMENT_OPTIONS = [
+  'In a fork',
+  'Supported from below',
+  'Hanging / suspended',
+  'In a hedge, shrub, or tree',
+  'Not sure',
+]
 
 function LocationPicker({ position, onPick }) {
   useMapEvents({
@@ -27,6 +45,17 @@ function ReportingForm() {
   const { state } = useLocation()
   const navigate = useNavigate()
   const guideAnswers = state?.guideAnswers || {}
+  const cameFromGuide = Boolean(state?.guideAnswers)
+
+  const [speciesList, setSpeciesList] = useState([])
+  const [speciesLoaded, setSpeciesLoaded] = useState(false)
+
+  const [species, setSpecies] = useState('')
+  const [shape, setShape] = useState(guideAnswers.nest_shape || '')
+  const [placement, setPlacement] = useState(guideAnswers.position_type || '')
+  const [habitat, setHabitat] = useState('')
+  const [materials, setMaterials] = useState('')
+  const [observedDate, setObservedDate] = useState(new Date().toISOString().split('T')[0])
 
   const [notes, setNotes] = useState('')
   const [email, setEmail] = useState('')
@@ -40,6 +69,26 @@ function ReportingForm() {
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [photoWarning, setPhotoWarning] = useState(null)
+
+  useEffect(() => {
+    publicApi
+      .getSpecies()
+      .then((data) => {
+        const list = Array.isArray(data) ? data : data.results || []
+        setSpeciesList(list)
+
+        const hint = GUIDE_KEY_TO_NAME_HINT[guideAnswers.key_result]
+        if (hint) {
+          const match = list.find((s) => s.name.toLowerCase().includes(hint))
+          if (match) setSpecies(match.id)
+        }
+      })
+      .catch((err) => {
+        console.error('Could not load species list:', err.message)
+      })
+      .finally(() => setSpeciesLoaded(true))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!navigator.geolocation) {
@@ -101,10 +150,14 @@ function ReportingForm() {
     setError(null)
 
     const payload = {
-      ...guideAnswers,
-      species: SPECIES_ID_MAP[guideAnswers.key_result] || null,
-      notes,
-      contact_email: email || null,
+      species: species || null,
+      shape: shape || '',
+      placement: placement || '',
+      habitat: habitat || '',
+      materials: materials || '',
+      observed_date: observedDate || null,
+      description: notes || '',
+      contact_email: email || '',
       location: {
         exact_latitude: Number(position[0].toFixed(6)),
         exact_longitude: Number(position[1].toFixed(6)),
@@ -141,10 +194,92 @@ function ReportingForm() {
   return (
     <div>
       <h2>Report a Nest</h2>
-      <p>Shape: {guideAnswers.nest_shape}</p>
-      <p>Position: {guideAnswers.position_type}</p>
+
+      {!cameFromGuide && (
+        <p style={{ fontSize: 13, color: 'grey' }}>
+          Not sure what species this is?{' '}
+          <Link to="/guide">Try the identification guide</Link> instead — or fill in what you
+          know below and a researcher will confirm the rest.
+        </p>
+      )}
 
       <form onSubmit={handleSubmit}>
+        <div>
+          <label>Species (if known)</label>
+          <br />
+          <select
+            value={species}
+            onChange={(e) => setSpecies(e.target.value ? Number(e.target.value) : '')}
+            disabled={!speciesLoaded}
+          >
+            <option value="">Not sure / let a researcher decide</option>
+            {speciesList.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Nest shape</label>
+          <br />
+          <select value={shape} onChange={(e) => setShape(e.target.value)}>
+            <option value="">Not specified</option>
+            {SHAPE_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Where is it positioned?</label>
+          <br />
+          <select value={placement} onChange={(e) => setPlacement(e.target.value)}>
+            <option value="">Not specified</option>
+            {PLACEMENT_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Habitat (optional)</label>
+          <br />
+          <input
+            type="text"
+            value={habitat}
+            onChange={(e) => setHabitat(e.target.value)}
+            placeholder="e.g. Native bush, urban garden, residential garden"
+          />
+        </div>
+
+        <div>
+          <label>Materials (optional)</label>
+          <br />
+          <input
+            type="text"
+            value={materials}
+            onChange={(e) => setMaterials(e.target.value)}
+            placeholder="e.g. Moss, twigs, grass, spider silk"
+          />
+        </div>
+
+        <div>
+          <label>When did you see this?</label>
+          <br />
+          <input
+            type="date"
+            value={observedDate}
+            onChange={(e) => setObservedDate(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+
         <div>
           <label>Nest Location</label>
           <br />

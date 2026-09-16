@@ -28,17 +28,18 @@ function App() {
     navigate('/')
   }
 
-  const navLinkStyle = { color: BRAND.textMuted, textDecoration: 'none', fontSize: 14, letterSpacing: '0.01em' }
+  const navLinkStyle = { color: BRAND.textMuted, textDecoration: 'none', fontSize: 20, letterSpacing: '0.01em' }
 
   return (
     <div style={{ minHeight: '100vh' }}>
       <header style={{ background: BRAND.header, padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(147,187,74,0.15)' }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img src={nestquestLogo} alt="NestQuest" style={{ height: 34, display: 'block' }} />
+          <img src={nestquestLogo} alt="NestQuest" style={{ height: 52, display: 'block' }} />
         </Link>
         <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
           <Link to="/" style={navLinkStyle}>Home</Link>
           <Link to="/guide" style={navLinkStyle}>Guide</Link>
+<Link to="/report" style={navLinkStyle}>Report</Link>
           <Link to="/map" style={navLinkStyle}>Map</Link>
           <Link to="/reports" style={navLinkStyle}>Reports</Link>
           {isLoggedIn ? (
