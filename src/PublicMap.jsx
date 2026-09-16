@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { publicApi } from './api/client.js'
@@ -36,6 +37,9 @@ function PublicMap() {
 
   return (
     <div>
+      <Link to="/reports" style={{ fontSize: 13, color: '#93BB4A', textDecoration: 'none', display: 'inline-block', marginBottom: 12 }}>
+        &larr; Back to Reports
+      </Link>
       <h2>Nest Map</h2>
       {loading && <p>Loading...</p>}
       {usingMockData && !loading && (
