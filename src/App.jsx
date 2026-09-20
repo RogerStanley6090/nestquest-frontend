@@ -32,7 +32,7 @@ function App() {
     return {
       color: isActive ? BRAND.accent : BRAND.textMuted,
       textDecoration: 'none',
-      fontSize: 20,
+      fontSize: 16,
       letterSpacing: '0.01em',
       fontWeight: isActive ? 600 : 400,
       borderBottom: isActive ? `2px solid ${BRAND.accent}` : '2px solid transparent',
@@ -43,11 +43,14 @@ function App() {
 
   return (
     <div style={{ minHeight: '100vh' }}>
-      <header style={{ background: BRAND.header, padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(147,187,74,0.15)' }}>
+      <header
+        className="nq-header"
+        style={{ background: BRAND.header, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(147,187,74,0.15)' }}
+      >
         <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img src={nestquestLogo} alt="NestQuest" style={{ height: 52, display: 'block' }} />
+          <img src={nestquestLogo} alt="NestQuest" className="nq-logo" style={{ display: 'block' }} />
         </Link>
-        <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
+        <nav className="nq-nav" style={{ display: 'flex', alignItems: 'center' }}>
           <NavLink to="/" end style={navLinkStyle}>Home</NavLink>
           <NavLink to="/guide" style={navLinkStyle}>Guide</NavLink>
           <NavLink to="/report" style={navLinkStyle}>Report</NavLink>
@@ -82,7 +85,7 @@ function App() {
         </nav>
       </header>
 
-      <main style={{ padding: '32px 40px', maxWidth: 1200, margin: '0 auto' }}>
+      <main className="nq-main" style={{ maxWidth: 1200, margin: '0 auto' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/guide" element={<IdentificationGuide />} />

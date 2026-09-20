@@ -11,17 +11,29 @@ async function request(path, options = {}) {
     ...options.headers,
   }
 
-  const response = await fetch(url, { ...options, headers })
+  let response
+  try {
+    response = await fetch(url, { ...options, headers })
+  } catch (networkErr) {
+    const err = new Error('Network request failed')
+    err.status = null
+    err.body = null
+    err.isNetworkError = true
+    throw err
+  }
 
   if (!response.ok) {
-    let detail = response.statusText
+    let body = null
     try {
-      const body = await response.json()
-      detail = body.detail || JSON.stringify(body)
+      body = await response.json()
     } catch {
       // response wasn't JSON
     }
-    throw new Error(`API error ${response.status}: ${detail}`)
+    const detail = body?.detail || (body ? JSON.stringify(body) : response.statusText)
+    const err = new Error(`API error ${response.status}: ${detail}`)
+    err.status = response.status
+    err.body = body
+    throw err
   }
 
   if (response.status === 204) return null

@@ -106,15 +106,15 @@ function ReportDetail() {
         </p>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
-        <h1 style={{ color: BRAND.accent, fontSize: 28, margin: 0 }}>Report #{id}</h1>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
+        <h1 style={{ color: BRAND.accent, fontSize: 26, margin: 0 }}>Report #{id}</h1>
         <span style={{ background: statusMeta.bg, color: statusMeta.text, fontSize: 12, padding: '4px 14px', borderRadius: 20, fontWeight: 500 }}>
           {statusMeta.label}
         </span>
       </div>
 
       <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+        <div className="nq-two-col">
           <div>
             <p style={labelStyle}>Photo</p>
             {firstPhotoUrl ? (

@@ -129,8 +129,8 @@ function Dashboard() {
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4 }}>
-        <h1 style={{ color: '#93BB4A', fontSize: 30, margin: 0 }}>Researcher dashboard</h1>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
+        <h1 style={{ color: '#93BB4A', fontSize: 28, margin: 0 }}>Researcher dashboard</h1>
         <span style={{ color: '#8A9483', fontSize: 13 }}>{reports.length} reports</span>
       </div>
 
@@ -140,7 +140,7 @@ function Dashboard() {
         </p>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14, margin: '20px 0 28px' }}>
+      <div className="nq-stat-grid" style={{ margin: '20px 0 28px' }}>
         {FILTERS.filter((f) => f.key !== 'all').map((f) => {
           const meta = STATUS_META[f.key]
           const isActive = statusFilter === f.key
@@ -176,7 +176,7 @@ function Dashboard() {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', maxWidth: 340, flex: 1 }}>
+        <div style={{ position: 'relative', maxWidth: 340, flex: 1, minWidth: 200 }}>
           <i className="ti ti-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 15, color: '#6E8A5E' }} aria-hidden="true"></i>
           <input
             type="text"
@@ -234,48 +234,50 @@ function Dashboard() {
       </div>
 
       <div style={{ background: '#173722', border: '1px solid #234A2E', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #234A2E' }}>
-              {SORT_COLUMNS.map((col) => (
-                <th
-                  key={col.key}
-                  onClick={() => handleSort(col.key)}
-                  style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 500, color: '#8A9483', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none' }}
-                >
-                  {col.label}
-                  {sortKey === col.key && (
-                    <i className={`ti ti-arrow-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 12, marginLeft: 4, verticalAlign: 'middle' }} aria-hidden="true"></i>
-                  )}
-                </th>
-              ))}
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {visibleReports.map((r, i) => {
-              const meta = STATUS_META[r.status] || STATUS_META.unverified
-              return (
-                <tr key={r.id} className="nq-row" style={{ borderBottom: i === visibleReports.length - 1 ? 'none' : '1px solid #1F3F28' }}>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 15, color: '#93BB4A' }}>#{r.id}</span>
-                  </td>
-                  <td style={{ padding: '12px 16px' }}>{r.final_species_name ||formatSpecies(r.species)}</td>
-                  <td style={{ padding: '12px 16px', color: '#B7C0AC' }}>{formatLocation(r.location)}</td>
-                  <td style={{ padding: '12px 16px', color: '#B7C0AC' }}>{r.date || r.created_at || '—'}</td>
-                  <td style={{ padding: '12px 16px' }}>
-                    <span style={{ background: meta.bg, color: meta.text, fontSize: 12, padding: '3px 12px', borderRadius: 20, fontWeight: 500 }}>
-                      {meta.label}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    <Link to={`/dashboard/report/${r.id}`} className="nq-view-link" style={{ color: '#93BB4A', fontSize: 13, fontWeight: 500 }}>View</Link>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <div className="nq-table-scroll">
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #234A2E' }}>
+                {SORT_COLUMNS.map((col) => (
+                  <th
+                    key={col.key}
+                    onClick={() => handleSort(col.key)}
+                    style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 500, color: '#8A9483', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                  >
+                    {col.label}
+                    {sortKey === col.key && (
+                      <i className={`ti ti-arrow-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 12, marginLeft: 4, verticalAlign: 'middle' }} aria-hidden="true"></i>
+                    )}
+                  </th>
+                ))}
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleReports.map((r, i) => {
+                const meta = STATUS_META[r.status] || STATUS_META.unverified
+                return (
+                  <tr key={r.id} className="nq-row" style={{ borderBottom: i === visibleReports.length - 1 ? 'none' : '1px solid #1F3F28' }}>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 15, color: '#93BB4A' }}>#{r.id}</span>
+                    </td>
+                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{formatSpecies(r.species)}</td>
+                    <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{formatLocation(r.location)}</td>
+                    <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{r.date || r.created_at || '—'}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <span style={{ background: meta.bg, color: meta.text, fontSize: 12, padding: '3px 12px', borderRadius: 20, fontWeight: 500, whiteSpace: 'nowrap' }}>
+                        {meta.label}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                      <Link to={`/dashboard/report/${r.id}`} className="nq-view-link" style={{ color: '#93BB4A', fontSize: 13, fontWeight: 500 }}>View</Link>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
         {visibleReports.length === 0 && (
           <p style={{ padding: '24px 16px', textAlign: 'center', color: '#8A9483' }}>No reports match this filter.</p>
         )}

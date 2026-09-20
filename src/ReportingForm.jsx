@@ -42,6 +42,39 @@ const PLACEMENT_OPTIONS = [
   'Not sure',
 ]
 
+// Translates a raw API error into plain language a nest-reporting user can
+// actually act on. Falls back to a generic message for anything unexpected,
+// but logs the real technical detail to the console for debugging.
+function getFriendlyErrorMessage(err, context) {
+  console.error(`${context} failed:`, err)
+
+  if (err.isNetworkError) {
+    return "Couldn't reach the server. Please check your internet connection and try again."
+  }
+
+  if (err.status === 400 && err.body?.photo) {
+    return 'That photo couldn\u2019t be uploaded \u2014 please make sure it\u2019s a JPG, PNG, or HEIC image under 8MB.'
+  }
+
+  if (err.status === 400 && err.body?.location) {
+    return 'There was a problem with the nest location. Please try setting it on the map again.'
+  }
+
+  if (err.status === 400) {
+    return 'Some information couldn\u2019t be saved \u2014 please check the form and try again.'
+  }
+
+  if (err.status === 401 || err.status === 403) {
+    return "You don't have permission to do that. Please try refreshing the page."
+  }
+
+  if (err.status >= 500) {
+    return 'Something went wrong on our end. Please try again in a moment.'
+  }
+
+  return `${context} didn\u2019t work. Please try again.`
+}
+
 function LocationPicker({ position, onPick }) {
   useMapEvents({
     click(e) {
@@ -56,6 +89,8 @@ function ReportingForm() {
   const navigate = useNavigate()
   const guideAnswers = state?.guideAnswers || {}
   const cameFromGuide = Boolean(state?.guideAnswers)
+
+  const [step, setStep] = useState('form') // 'form' | 'review'
 
   const [speciesList, setSpeciesList] = useState([])
   const [speciesLoaded, setSpeciesLoaded] = useState(false)
@@ -125,37 +160,46 @@ function ReportingForm() {
   }
 
   function handlePhotoChange(e) {
-  const file = e.target.files[0]
-  setPhotoWarning(null)
-  if (!file) {
-    setPhotoFile(null)
-    setPhotoPreview(null)
-    return
-  }
-  const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || /\.hei[cf]$/i.test(file.name)
-  if (!file.type.startsWith('image/') && !isHeic) {
-    setPhotoWarning('Please choose an image file.')
-    return
-  }
-  if (file.size > 8 * 1024 * 1024) {
-    setPhotoWarning('Image is larger than 8MB — please choose a smaller photo.')
-    return
-  }
-  setPhotoFile(file)
-  setPhotoPreview(isHeic ? null : URL.createObjectURL(file))
-  if (isHeic) {
-    setPhotoWarning('Preview isn\u2019t available for this file type, but it will still upload correctly.')
-  }
-}
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-
-    if (!position) {
-      setError('Please set the nest location on the map before submitting.')
+    const file = e.target.files[0]
+    setPhotoWarning(null)
+    if (!file) {
+      setPhotoFile(null)
+      setPhotoPreview(null)
       return
     }
+    const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || /\.hei[cf]$/i.test(file.name)
+    if (!file.type.startsWith('image/') && !isHeic) {
+      setPhotoWarning('Please choose an image file.')
+      return
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setPhotoWarning('Image is larger than 8MB — please choose a smaller photo.')
+      return
+    }
+    setPhotoFile(file)
+    setPhotoPreview(isHeic ? null : URL.createObjectURL(file))
+    if (isHeic) {
+      setPhotoWarning('Preview isn\u2019t available for this file type, but it will still upload correctly.')
+    }
+  }
 
+  function handleContinueToReview(e) {
+    e.preventDefault()
+    if (!position) {
+      setError('Please set the nest location on the map before continuing.')
+      return
+    }
+    setError(null)
+    setStep('review')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  function handleBackToForm() {
+    setStep('form')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  async function handleConfirmSubmit() {
     setSubmitting(true)
     setError(null)
 
@@ -174,37 +218,157 @@ function ReportingForm() {
       },
     }
 
-    console.log('Submitting report:', payload)
-
+    let response
     try {
-      const response = await publicApi.submitReport(payload)
+      response = await publicApi.submitReport(payload)
       console.log('Report submit response:', response)
-
-      if (photoFile && response.id) {
-        try {
-          const photoResponse = await publicApi.uploadPhoto(response.id, photoFile)
-          console.log('Photo upload response:', photoResponse)
-        } catch (photoErr) {
-          console.error('Photo upload failed:', photoErr)
-          setError(`Report saved, but the photo could not be uploaded: ${photoErr.message}`)
-          setSubmitting(false)
-          return
-        }
-      }
-
-      navigate('/confirmation')
     } catch (err) {
-      console.error('Submit failed:', err)
-      setError(`Could not submit report: ${err.message}`)
-    } finally {
+      setError(getFriendlyErrorMessage(err, 'Submitting your report'))
       setSubmitting(false)
+      return
     }
+
+    if (photoFile && response.id) {
+      try {
+        const photoResponse = await publicApi.uploadPhoto(response.id, photoFile)
+        console.log('Photo upload response:', photoResponse)
+      } catch (err) {
+        setError(
+          `Your report was saved, but the photo couldn\u2019t be uploaded. ${getFriendlyErrorMessage(err, 'Uploading the photo')}`
+        )
+        setSubmitting(false)
+        return
+      }
+    }
+
+    navigate('/confirmation')
   }
 
   const labelStyle = { fontSize: 12, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px', display: 'block' }
   const fieldStyle = { width: '100%', background: BRAND.inputBg, border: `1px solid ${BRAND.border}`, color: BRAND.text, borderRadius: 8, padding: 10, fontSize: 14 }
   const fieldGroup = { marginBottom: 20 }
 
+  const selectedSpeciesName = speciesList.find((s) => s.id === species)?.name || 'Not sure / let a researcher decide'
+
+  // ============================================================
+  // REVIEW STEP
+  // ============================================================
+  if (step === 'review') {
+    const reviewRow = (label, value) => (
+      <div style={{ display: 'flex', padding: '10px 0', borderBottom: `1px solid ${BRAND.border}` }}>
+        <div style={{ width: 180, flexShrink: 0, fontSize: 12, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</div>
+        <div style={{ fontSize: 14, color: BRAND.text }}>{value || '—'}</div>
+      </div>
+    )
+
+    return (
+      <div>
+        <h1 style={{ color: BRAND.accent, fontSize: 28, margin: '0 0 6px' }}>Review your report</h1>
+        <p style={{ fontSize: 13, color: BRAND.textMuted, marginBottom: 24 }}>
+          Please check everything below before submitting. You can go back to make changes.
+        </p>
+
+        <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
+          <div className="nq-two-col">
+            <div>
+              {reviewRow('Species', selectedSpeciesName)}
+              {reviewRow('Nest shape', shape)}
+              {reviewRow('Placement', placement)}
+              {reviewRow('Habitat', habitat)}
+              {reviewRow('Materials', materials)}
+              {reviewRow('Date observed', observedDate)}
+              {reviewRow('Notes', notes)}
+              {reviewRow('Contact email', email)}
+            </div>
+
+            <div>
+              <p style={labelStyle}>Location</p>
+              <p style={{ fontSize: 14, color: BRAND.text, marginBottom: 16 }}>
+                {position[0].toFixed(5)}, {position[1].toFixed(5)}
+              </p>
+
+              <p style={labelStyle}>Photo</p>
+              {photoFile ? (
+                photoPreview ? (
+                  <img
+                    src={photoPreview}
+                    alt="Nest preview"
+                    style={{ maxWidth: '100%', height: 160, objectFit: 'cover', borderRadius: 8, border: `1px solid ${BRAND.border}` }}
+                  />
+                ) : (
+                  <p style={{ fontSize: 13, color: BRAND.text }}>{photoFile.name} (preview unavailable, will still upload)</p>
+                )
+              ) : (
+                <p style={{ fontSize: 13, color: BRAND.textMuted }}>No photo attached</p>
+              )}
+            </div>
+          </div>
+
+          {error && <p style={{ color: '#E4685A', fontSize: 13, marginTop: 20, marginBottom: 0 }}>{error}</p>}
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleBackToForm}
+              disabled={submitting}
+              style={{
+                background: 'transparent',
+                color: BRAND.textMuted,
+                border: `1px solid ${BRAND.border}`,
+                fontSize: 14,
+                fontWeight: 500,
+                padding: '12px 24px',
+                borderRadius: 8,
+                cursor: submitting ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              <i className="ti ti-arrow-left" style={{ fontSize: 15 }} aria-hidden="true"></i>
+              Back to edit
+            </button>
+
+            <button
+              type="button"
+              onClick={handleConfirmSubmit}
+              disabled={submitting}
+              className="nq-button"
+              style={{
+                background: submitting ? '#6E8A5E' : BRAND.accent,
+                color: '#0F2818',
+                border: 'none',
+                fontSize: 14,
+                fontWeight: 500,
+                padding: '12px 28px',
+                borderRadius: 8,
+                cursor: submitting ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+              }}
+            >
+              {submitting ? (
+                <>
+                  <i className="ti ti-loader-2" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                  Submitting
+                </>
+              ) : (
+                <>
+                  <i className="ti ti-send" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                  Confirm and submit
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
+  // FORM STEP
+  // ============================================================
   return (
     <div>
       <h1 style={{ color: BRAND.accent, fontSize: 28, margin: '0 0 6px' }}>Report a nest</h1>
@@ -217,9 +381,9 @@ function ReportingForm() {
         </p>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleContinueToReview}>
         <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+          <div className="nq-two-col">
             <div>
               <div style={fieldGroup}>
                 <label style={labelStyle}>Species (if known)</label>
@@ -327,7 +491,7 @@ function ReportingForm() {
 
               <div style={fieldGroup}>
                 <label style={labelStyle}>Photo (optional)</label>
-                <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ color: BRAND.text, fontSize: 13 }} />
+                <input type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} style={{ color: BRAND.text, fontSize: 13 }} />
                 {photoWarning && <p style={{ color: '#E4685A', fontSize: 12, marginTop: 6 }}>{photoWarning}</p>}
                 {photoPreview && (
                   <img
@@ -358,17 +522,17 @@ function ReportingForm() {
 
           <button
             type="submit"
-            disabled={submitting || locating}
+            disabled={locating}
             className="nq-button"
             style={{
-              background: submitting || locating ? '#6E8A5E' : BRAND.accent,
+              background: locating ? '#6E8A5E' : BRAND.accent,
               color: '#0F2818',
               border: 'none',
               fontSize: 14,
               fontWeight: 500,
               padding: '12px 28px',
               borderRadius: 8,
-              cursor: submitting || locating ? 'default' : 'pointer',
+              cursor: locating ? 'default' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -376,17 +540,8 @@ function ReportingForm() {
               letterSpacing: '0.01em',
             }}
           >
-            {submitting ? (
-              <>
-                <i className="ti ti-loader-2" style={{ fontSize: 16 }} aria-hidden="true"></i>
-                Submitting
-              </>
-            ) : (
-              <>
-                <i className="ti ti-send" style={{ fontSize: 16 }} aria-hidden="true"></i>
-                Submit report
-              </>
-            )}
+            <i className="ti ti-eye" style={{ fontSize: 16 }} aria-hidden="true"></i>
+            Review report
           </button>
         </div>
       </form>
