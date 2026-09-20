@@ -1,4 +1,4 @@
-import { Routes, Route, Link, useNavigate } from 'react-router-dom'
+import { Routes, Route, NavLink, Link, useNavigate } from 'react-router-dom'
 import Home from './Home.jsx'
 import IdentificationGuide from './IdentificationGuide.jsx'
 import ReportingForm from './ReportingForm.jsx'
@@ -28,7 +28,18 @@ function App() {
     navigate('/')
   }
 
-  const navLinkStyle = { color: BRAND.textMuted, textDecoration: 'none', fontSize: 20, letterSpacing: '0.01em' }
+  function navLinkStyle({ isActive }) {
+    return {
+      color: isActive ? BRAND.accent : BRAND.textMuted,
+      textDecoration: 'none',
+      fontSize: 20,
+      letterSpacing: '0.01em',
+      fontWeight: isActive ? 600 : 400,
+      borderBottom: isActive ? `2px solid ${BRAND.accent}` : '2px solid transparent',
+      paddingBottom: 4,
+      transition: 'color 0.15s ease, border-color 0.15s ease',
+    }
+  }
 
   return (
     <div style={{ minHeight: '100vh' }}>
@@ -37,11 +48,11 @@ function App() {
           <img src={nestquestLogo} alt="NestQuest" style={{ height: 52, display: 'block' }} />
         </Link>
         <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-          <Link to="/" style={navLinkStyle}>Home</Link>
-          <Link to="/guide" style={navLinkStyle}>Guide</Link>
-<Link to="/report" style={navLinkStyle}>Report</Link>
-          <Link to="/map" style={navLinkStyle}>Map</Link>
-          <Link to="/reports" style={navLinkStyle}>Reports</Link>
+          <NavLink to="/" end style={navLinkStyle}>Home</NavLink>
+          <NavLink to="/guide" style={navLinkStyle}>Guide</NavLink>
+          <NavLink to="/report" style={navLinkStyle}>Report</NavLink>
+          <NavLink to="/map" style={navLinkStyle}>Map</NavLink>
+          <NavLink to="/reports" style={navLinkStyle}>Reports</NavLink>
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
@@ -50,14 +61,24 @@ function App() {
               Logout
             </button>
           ) : (
-            <Link to="/login" style={navLinkStyle}>Login</Link>
+            <NavLink to="/login" style={navLinkStyle}>Login</NavLink>
           )}
-          <Link
+          <NavLink
             to="/dashboard"
-            style={{ color: BRAND.accent, textDecoration: 'none', fontSize: 14, fontWeight: 500, border: `1px solid ${BRAND.accent}`, padding: '6px 16px', borderRadius: 6 }}
+            style={({ isActive }) => ({
+              color: isActive ? BRAND.header : BRAND.accent,
+              background: isActive ? BRAND.accent : 'transparent',
+              textDecoration: 'none',
+              fontSize: 14,
+              fontWeight: 500,
+              border: `1px solid ${BRAND.accent}`,
+              padding: '6px 16px',
+              borderRadius: 6,
+              transition: 'background 0.15s ease, color 0.15s ease',
+            })}
           >
             Dashboard
-          </Link>
+          </NavLink>
         </nav>
       </header>
 

@@ -87,7 +87,7 @@ function ReportDetail() {
   const species = report?.species || 'Unknown'
   const submittedDate = report?.created_at || report?.date || '—'
   const contactEmail = report?.contact_email || '—'
-  const firstPhotoUrl = photos[0]?.image_url || null
+  const firstPhotoUrl = photos[0]?.photo_url || null
   const statusMeta = STATUS_META[status] || STATUS_META.unverified
 
   const labelStyle = { fontSize: 12, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }
