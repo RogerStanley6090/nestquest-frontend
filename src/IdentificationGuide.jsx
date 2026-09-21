@@ -8,6 +8,16 @@ import songthrushPhoto from './assets/birds/songthrush.jpg'
 
 // Based on the updated NestQuest Bird Nest Information packet (Rachel, sponsor)
 
+const BRAND = {
+  card: '#173722',
+  border: '#234A2E',
+  text: '#F5EFD9',
+  textMuted: '#8A9483',
+  accent: '#93BB4A',
+  inputBg: '#0F2818',
+  warn: '#E5A83A',
+}
+
 const SAFETY_MESSAGE =
   'Please do not touch, move, collect, or disturb any nest. If there are eggs, ' +
   'chicks, or adult birds nearby, observe only from a distance. Take photos only ' +
@@ -143,71 +153,192 @@ function IdentificationGuide() {
     })
   }
 
+  const cardStyle = {
+    background: BRAND.card,
+    border: `1px solid ${BRAND.border}`,
+    borderRadius: 12,
+    padding: 28,
+    boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+  }
+
+  const primaryButton = (disabled) => ({
+    background: disabled ? '#6E8A5E' : BRAND.accent,
+    color: '#0F2818',
+    border: 'none',
+    fontSize: 14,
+    fontWeight: 500,
+    padding: '12px 28px',
+    borderRadius: 8,
+    cursor: disabled ? 'default' : 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+  })
+
+  const secondaryButton = {
+    background: 'transparent',
+    color: BRAND.textMuted,
+    border: `1px solid ${BRAND.border}`,
+    fontSize: 14,
+    fontWeight: 500,
+    padding: '12px 24px',
+    borderRadius: 8,
+    cursor: 'pointer',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+  }
+
+  // ============================================================
+  // SAFETY SCREEN
+  // ============================================================
   if (showSafety) {
     return (
       <div>
-        <h2>Before you begin</h2>
-        <p>{SAFETY_MESSAGE}</p>
-        <button onClick={() => setShowSafety(false)}>I understand — continue</button>
+        <h1 style={{ color: BRAND.accent, fontSize: 28, margin: '0 0 20px' }}>Before you begin</h1>
+        <div style={{ ...cardStyle, maxWidth: 620 }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 24 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 10, background: BRAND.warn, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className="ti ti-alert-triangle" style={{ fontSize: 22, color: '#3D2A05' }} aria-hidden="true"></i>
+            </div>
+            <p style={{ fontSize: 14, color: BRAND.text, margin: 0, lineHeight: 1.6 }}>{SAFETY_MESSAGE}</p>
+          </div>
+          <button className="nq-button" onClick={() => setShowSafety(false)} style={primaryButton(false)}>
+            <i className="ti ti-check" style={{ fontSize: 16 }} aria-hidden="true"></i>
+            I understand — continue
+          </button>
+        </div>
       </div>
     )
   }
 
+  // ============================================================
+  // RESULT SCREEN
+  // ============================================================
   if (showResult) {
     const matchKey = computeLikelyMatch(answers)
     const match = SPECIES_INFO[matchKey]
     const isUnknown = matchKey === 'unknown'
     return (
       <div>
-        <h2>{isUnknown ? "That's not my nest result" : 'Likely match result'}</h2>
-        {isUnknown ? (
-          <p>
-            No problem — nest identification can be tricky. You can submit this as an unknown
-            nest and upload photos for researcher review.
-          </p>
-        ) : (
-          <>
-            <h3>Your likely match is: {match.name}</h3>
-            {match.photo && (
-              <img
-                src={match.photo}
-                alt={`Example ${match.name} nest`}
-                style={{ maxWidth: 320, width: '100%', borderRadius: 8, display: 'block', margin: '10px 0' }}
-              />
-            )}
-            <p>
-              This result is based on your answers about nest shape, size, position, and visible
-              features. Nest identification can still be uncertain, so any submitted photos will
-              be reviewed before the record is used for research.
+        <h1 style={{ color: BRAND.accent, fontSize: 28, margin: '0 0 20px' }}>
+          {isUnknown ? "That's not my nest" : 'Likely match result'}
+        </h1>
+        <div style={{ ...cardStyle, maxWidth: 620 }}>
+          {isUnknown ? (
+            <p style={{ fontSize: 14, color: BRAND.text, lineHeight: 1.6 }}>
+              No problem — nest identification can be tricky. You can submit this as an unknown
+              nest and upload photos for researcher review.
             </p>
-            <p style={{ fontStyle: 'italic' }}>Best public clue: {match.clue}</p>
-          </>
-        )}
-        <button onClick={resetGuide}>That's not my nest / Start again</button>
-        <br />
-        <button onClick={goToReportingForm}>Submit this nest report</button>
+          ) : (
+            <>
+              {match.photo && (
+                <img
+                  src={match.photo}
+                  alt={`Example ${match.name} nest`}
+                  style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 10, marginBottom: 20 }}
+                />
+              )}
+              <h2 style={{ color: BRAND.text, fontSize: 20, margin: '0 0 12px' }}>
+                Your likely match is: <span style={{ color: BRAND.accent }}>{match.name}</span>
+              </h2>
+              <p style={{ fontSize: 14, color: BRAND.textMuted, lineHeight: 1.6, marginBottom: 14 }}>
+                This result is based on your answers about nest shape, size, position, and visible
+                features. Nest identification can still be uncertain, so any submitted photos will
+                be reviewed before the record is used for research.
+              </p>
+              <div style={{ background: BRAND.inputBg, border: `1px solid ${BRAND.border}`, borderRadius: 8, padding: 14, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <i className="ti ti-bulb" style={{ fontSize: 16, color: BRAND.accent, marginTop: 2 }} aria-hidden="true"></i>
+                <p style={{ fontSize: 13, color: BRAND.text, margin: 0, fontStyle: 'italic' }}>Best public clue: {match.clue}</p>
+              </div>
+            </>
+          )}
+
+          <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
+            <button onClick={resetGuide} style={secondaryButton}>
+              <i className="ti ti-refresh" style={{ fontSize: 15 }} aria-hidden="true"></i>
+              That's not my nest / Start again
+            </button>
+            <button className="nq-button" onClick={goToReportingForm} style={primaryButton(false)}>
+              <i className="ti ti-send" style={{ fontSize: 16 }} aria-hidden="true"></i>
+              Submit this nest report
+            </button>
+          </div>
+        </div>
       </div>
     )
   }
 
+  // ============================================================
+  // QUESTION STEPS
+  // ============================================================
   return (
     <div>
-      <p>
-        Step {stepIndex + 1} of {STEPS.length}
-      </p>
-      <h2>{step.question}</h2>
-      {step.options.map((option) => (
-        <button key={option} onClick={() => selectOption(option)}>
-          {option} {answers[step.key] === option ? '✓' : ''}
-        </button>
-      ))}
-      <br />
-      <button onClick={goBack} disabled={stepIndex === 0}>
-        Back
-      </button>
-      <button onClick={goNext} disabled={!hasAnswered}>
-        {isLastStep ? 'See likely match' : 'Next'}
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <h1 style={{ color: BRAND.accent, fontSize: 24, margin: 0 }}>Identification guide</h1>
+        <span style={{ fontSize: 13, color: BRAND.textMuted }}>
+          Step {stepIndex + 1} of {STEPS.length}
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
+        {STEPS.map((s, i) => (
+          <div
+            key={s.key}
+            style={{
+              flex: 1,
+              height: 4,
+              borderRadius: 2,
+              background: i <= stepIndex ? BRAND.accent : BRAND.border,
+              transition: 'background 0.2s ease',
+            }}
+          />
+        ))}
+      </div>
+
+      <div style={{ ...cardStyle, maxWidth: 620 }}>
+        <h2 style={{ color: BRAND.text, fontSize: 19, margin: '0 0 20px', lineHeight: 1.4 }}>{step.question}</h2>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
+          {step.options.map((option) => {
+            const selected = answers[step.key] === option
+            return (
+              <button
+                key={option}
+                onClick={() => selectOption(option)}
+                className="nq-pill"
+                style={{
+                  textAlign: 'left',
+                  background: selected ? 'rgba(147,187,74,0.12)' : BRAND.inputBg,
+                  border: `1px solid ${selected ? BRAND.accent : BRAND.border}`,
+                  color: BRAND.text,
+                  borderRadius: 8,
+                  padding: '12px 16px',
+                  fontSize: 14,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 10,
+                }}
+              >
+                {option}
+                {selected && <i className="ti ti-check" style={{ fontSize: 16, color: BRAND.accent, flexShrink: 0 }} aria-hidden="true"></i>}
+              </button>
+            )
+          })}
+        </div>
+
+        <div style={{ display: 'flex', gap: 12 }}>
+          <button onClick={goBack} disabled={stepIndex === 0} style={{ ...secondaryButton, opacity: stepIndex === 0 ? 0.5 : 1, cursor: stepIndex === 0 ? 'default' : 'pointer' }}>
+            <i className="ti ti-arrow-left" style={{ fontSize: 15 }} aria-hidden="true"></i>
+            Back
+          </button>
+          <button className="nq-button" onClick={goNext} disabled={!hasAnswered} style={primaryButton(!hasAnswered)}>
+            {isLastStep ? 'See likely match' : 'Next'}
+            <i className={`ti ti-${isLastStep ? 'search' : 'arrow-right'}`} style={{ fontSize: 15 }} aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
     </div>
   )
 }
