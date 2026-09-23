@@ -29,13 +29,37 @@ function formatSpecies(species) {
   return SPECIES_NAMES[species] || `Species #${species}`
 }
 
-function formatLocation(location) {
+function formatCoordinates(location) {
   if (!location) return '—'
   if (typeof location === 'string') return location
   const lat = location.exact_latitude ?? location.masked_latitude
   const lng = location.exact_longitude ?? location.masked_longitude
   if (lat == null || lng == null) return '—'
   return `${Number(lat).toFixed(4)}, ${Number(lng).toFixed(4)}`
+}
+
+async function reverseGeocode(location) {
+  if (!location || typeof location === 'string') {
+    return typeof location === 'string' ? location : '—'
+  }
+  const lat = location.exact_latitude ?? location.masked_latitude
+  const lng = location.exact_longitude ?? location.masked_longitude
+  if (lat == null || lng == null) return '—'
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=en`
+    )
+    if (!response.ok) {
+      throw new Error('Reverse geocoding failed')
+    }
+    const data = await response.json()
+    const address = data.address || {}
+    return (address.park || address.nature_reserve || address.road || address.suburb || address.neighbourhood || address.city || address.town || address.village || data.display_name || formatCoordinates(location)
+    )
+  } catch (error) {
+    console.error('Could not get location name:', error)
+    return formatCoordinates(location)
+  }
 }
 
 const FILTERS = [
@@ -60,7 +84,7 @@ const DEFAULT_SORT_DIR = 'asc'
 function getSortValue(report, key) {
   if (key === 'id') return report.id
   if (key === 'species') return formatSpecies(report.species).toLowerCase()
-  if (key === 'location') return formatLocation(report.location).toLowerCase()
+  if (key === 'location') return formatCoordinates(report.location).toLowerCase()
   if (key === 'date') return report.date || report.created_at || ''
   if (key === 'status') return report.status || ''
   return ''
@@ -73,17 +97,22 @@ function Dashboard() {
   const [searchTerm, setSearchTerm] = useState('')
   const [sortKey, setSortKey] = useState(DEFAULT_SORT_KEY)
   const [sortDir, setSortDir] = useState(DEFAULT_SORT_DIR)
+  const [locationNames, setLocationNames] = useState({})
 
   useEffect(() => {
-    researcherApi.listReports()
-      .then((data) => {
-        setReports(data)
-        setUsingMockData(false)
-      })
-      .catch((err) => {
-        console.log('Could not reach real API, using mock data:', err.message)
-        setUsingMockData(true)
-      })
+  researcherApi.listReports()
+    .then(async (data) => {
+      setReports(data)
+      setUsingMockData(false)
+      const names = {}
+      for (const report of data) {
+        names[report.id] = await reverseGeocode(report.location)
+      }
+      setLocationNames(names)
+    }).catch((err) => {
+      console.log('Could not reach real API, using mock data:', err.message)
+      setUsingMockData(true)
+    })
   }, [])
 
   function handleSort(key) {
@@ -262,7 +291,7 @@ function Dashboard() {
                       <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 15, color: '#93BB4A' }}>#{r.id}</span>
                     </td>
                     <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{formatSpecies(r.species)}</td>
-                    <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{formatLocation(r.location)}</td>
+                    <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{locationNames[r.id] || formatCoordinates(r.location)}</td>
                     <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{r.date || r.created_at || '—'}</td>
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ background: meta.bg, color: meta.text, fontSize: 12, padding: '3px 12px', borderRadius: 20, fontWeight: 500, whiteSpace: 'nowrap' }}>
