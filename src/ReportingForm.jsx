@@ -161,6 +161,8 @@ function ReportingForm() {
 
   function handlePhotoChange(e) {
     const file = e.target.files[0]
+    setPhotoFile(null)
+    setPhotoPreview(null)
     setPhotoWarning(null)
     if (!file) {
       setPhotoFile(null)
@@ -185,9 +187,25 @@ function ReportingForm() {
 
   function handleContinueToReview(e) {
     e.preventDefault()
+    if (!shape) {
+    setError('Please select the nest shape.')
+    return
+    }
+    if (!placement) {
+    setError('Please select where the nest is positioned.')
+    return
+    }
+    if (!observedDate) {
+    setError('Please enter the observation date.')
+    return
+    }
     if (!position) {
-      setError('Please set the nest location on the map before continuing.')
-      return
+    setError('Please set the nest location on the map.')
+    return
+    }
+    if (!photoFile) {
+    setError('Please attach a photo of the nest.')
+    return
     }
     setError(null)
     setStep('review')
@@ -490,7 +508,7 @@ function ReportingForm() {
               </div>
 
               <div style={fieldGroup}>
-                <label style={labelStyle}>Photo (optional)</label>
+                <label style={labelStyle}>Photo (*)</label>
                 <input type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} style={{ color: BRAND.text, fontSize: 13 }} />
                 {photoWarning && <p style={{ color: '#E4685A', fontSize: 12, marginTop: 6 }}>{photoWarning}</p>}
                 {photoPreview && (

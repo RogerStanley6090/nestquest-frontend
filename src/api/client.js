@@ -14,7 +14,7 @@ async function request(path, options = {}) {
   let response
   try {
     response = await fetch(url, { ...options, headers })
-  } catch (networkErr) {
+  } catch{
     const err = new Error('Network request failed')
     err.status = null
     err.body = null
