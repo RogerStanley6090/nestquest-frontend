@@ -91,6 +91,7 @@ function ReportingForm() {
   const cameFromGuide = Boolean(state?.guideAnswers)
 
   const [step, setStep] = useState('form') // 'form' | 'review'
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   const [speciesList, setSpeciesList] = useState([])
   const [speciesLoaded, setSpeciesLoaded] = useState(false)
@@ -154,9 +155,28 @@ function ReportingForm() {
     )
   }, [])
 
+  // Warn before the user closes the tab, refreshes, or navigates to a
+  // different website while they have unsaved report data — this is the
+  // standard browser-native "leave site?" prompt, and only browsers can
+  // supply the actual wording shown, not our own custom text.
+  useEffect(() => {
+    function handleBeforeUnload(e) {
+      if (!hasUnsavedChanges) return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  function markDirty() {
+    if (!hasUnsavedChanges) setHasUnsavedChanges(true)
+  }
+
   function handleMapClick(newPos) {
     setPosition(newPos)
     setLocationSource('manual')
+    markDirty()
   }
 
   function handlePhotoChange(e) {
@@ -181,6 +201,7 @@ function ReportingForm() {
     if (isHeic) {
       setPhotoWarning('Preview isn\u2019t available for this file type, but it will still upload correctly.')
     }
+    markDirty()
   }
 
   function handleContinueToReview(e) {
@@ -241,6 +262,9 @@ function ReportingForm() {
       }
     }
 
+    // Report is safely saved now — clear the unsaved-changes flag so no
+    // browser warning appears on the way to the confirmation page.
+    setHasUnsavedChanges(false)
     navigate('/confirmation')
   }
 
@@ -389,7 +413,10 @@ function ReportingForm() {
                 <label style={labelStyle}>Species (if known)</label>
                 <select
                   value={species}
-                  onChange={(e) => setSpecies(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) => {
+                    setSpecies(e.target.value ? Number(e.target.value) : '')
+                    markDirty()
+                  }}
                   disabled={!speciesLoaded}
                   style={fieldStyle}
                 >
@@ -404,7 +431,14 @@ function ReportingForm() {
 
               <div style={fieldGroup}>
                 <label style={labelStyle}>Nest shape</label>
-                <select value={shape} onChange={(e) => setShape(e.target.value)} style={fieldStyle}>
+                <select
+                  value={shape}
+                  onChange={(e) => {
+                    setShape(e.target.value)
+                    markDirty()
+                  }}
+                  style={fieldStyle}
+                >
                   <option value="">Not specified</option>
                   {SHAPE_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
@@ -416,7 +450,14 @@ function ReportingForm() {
 
               <div style={fieldGroup}>
                 <label style={labelStyle}>Where is it positioned?</label>
-                <select value={placement} onChange={(e) => setPlacement(e.target.value)} style={fieldStyle}>
+                <select
+                  value={placement}
+                  onChange={(e) => {
+                    setPlacement(e.target.value)
+                    markDirty()
+                  }}
+                  style={fieldStyle}
+                >
                   <option value="">Not specified</option>
                   {PLACEMENT_OPTIONS.map((opt) => (
                     <option key={opt} value={opt}>
@@ -431,7 +472,10 @@ function ReportingForm() {
                 <input
                   type="text"
                   value={habitat}
-                  onChange={(e) => setHabitat(e.target.value)}
+                  onChange={(e) => {
+                    setHabitat(e.target.value)
+                    markDirty()
+                  }}
                   placeholder="e.g. Native bush, urban garden, residential garden"
                   style={fieldStyle}
                 />
@@ -442,7 +486,10 @@ function ReportingForm() {
                 <input
                   type="text"
                   value={materials}
-                  onChange={(e) => setMaterials(e.target.value)}
+                  onChange={(e) => {
+                    setMaterials(e.target.value)
+                    markDirty()
+                  }}
                   placeholder="e.g. Moss, twigs, grass, spider silk"
                   style={fieldStyle}
                 />
@@ -453,7 +500,10 @@ function ReportingForm() {
                 <input
                   type="date"
                   value={observedDate}
-                  onChange={(e) => setObservedDate(e.target.value)}
+                  onChange={(e) => {
+                    setObservedDate(e.target.value)
+                    markDirty()
+                  }}
                   max={new Date().toISOString().split('T')[0]}
                   style={fieldStyle}
                 />
@@ -506,14 +556,25 @@ function ReportingForm() {
                 <label style={labelStyle}>Notes (optional)</label>
                 <textarea
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(e) => {
+                    setNotes(e.target.value)
+                    markDirty()
+                  }}
                   style={{ ...fieldStyle, minHeight: 80 }}
                 />
               </div>
 
               <div style={fieldGroup}>
                 <label style={labelStyle}>Contact email (optional)</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={fieldStyle} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    markDirty()
+                  }}
+                  style={fieldStyle}
+                />
               </div>
             </div>
           </div>
