@@ -9,6 +9,7 @@ import Login from './Login.jsx'
 import Dashboard from './Dashboard.jsx'
 import ReportDetail from './ReportDetail.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
+import NotFound from './NotFound.jsx'
 import nestquestLogo from './assets/nestquest-logo.png'
 import './App.css'
 
@@ -110,6 +111,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
     </div>
