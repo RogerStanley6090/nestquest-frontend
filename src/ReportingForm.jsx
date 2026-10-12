@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -6,6 +6,11 @@ import { publicApi } from './api/client.js'
 
 const DEFAULT_CENTER = [-36.8485, 174.7633]
 const GEOLOCATION_SUPPORTED = typeof navigator !== 'undefined' && !!navigator.geolocation
+const IS_TOUCH_DEVICE =
+  typeof window !== 'undefined' && !!window.matchMedia && window.matchMedia('(pointer: coarse)').matches
+
+const MAX_PHOTOS = 5
+const MAX_PHOTO_BYTES = 8 * 1024 * 1024
 
 const BRAND = {
   card: '#173722',
@@ -42,6 +47,10 @@ const PLACEMENT_OPTIONS = [
   'Not sure',
 ]
 
+function isHeicFile(file) {
+  return file.type === 'image/heic' || file.type === 'image/heif' || /\.hei[cf]$/i.test(file.name)
+}
+
 // Translates a raw API error into plain language a nest-reporting user can
 // actually act on. Falls back to a generic message for anything unexpected,
 // but logs the real technical detail to the console for debugging.
@@ -54,6 +63,10 @@ function getFriendlyErrorMessage(err, context) {
 
   if (err.status === 400 && err.body?.photo) {
     return 'That photo couldn\u2019t be uploaded \u2014 please make sure it\u2019s a JPG, PNG, or HEIC image under 8MB.'
+  }
+
+  if (err.status === 400 && err.body?.report) {
+    return `A report can have at most ${MAX_PHOTOS} photos.`
   }
 
   if (err.status === 400 && err.body?.location) {
@@ -112,9 +125,16 @@ function ReportingForm() {
   const [locating, setLocating] = useState(GEOLOCATION_SUPPORTED)
   const [locationSource, setLocationSource] = useState(GEOLOCATION_SUPPORTED ? null : 'manual')
 
-  const [photoFile, setPhotoFile] = useState(null)
-  const [photoPreview, setPhotoPreview] = useState(null)
-  const [photoWarning, setPhotoWarning] = useState(null)
+  // Each photo: { id, file, preview, status } where status is
+  // 'pending' | 'uploaded' | 'failed'. preview is null for HEIC files.
+  const [photos, setPhotos] = useState([])
+  const [photoWarnings, setPhotoWarnings] = useState([])
+  const [savedReportId, setSavedReportId] = useState(null)
+  const [uploadProgress, setUploadProgress] = useState(null)
+
+  const cameraInputRef = useRef(null)
+  const libraryInputRef = useRef(null)
+  const photosRef = useRef(photos)
 
   useEffect(() => {
     publicApi
@@ -169,6 +189,20 @@ function ReportingForm() {
     return () => window.removeEventListener('beforeunload', handleBeforeUnload)
   }, [hasUnsavedChanges])
 
+  // Keep a copy of the latest photos so the preview URLs can be released
+  // when the user leaves the page.
+  useEffect(() => {
+    photosRef.current = photos
+  }, [photos])
+
+  useEffect(() => {
+    return () => {
+      photosRef.current.forEach((p) => {
+        if (p.preview) URL.revokeObjectURL(p.preview)
+      })
+    }
+  }, [])
+
   function markDirty() {
     if (!hasUnsavedChanges) setHasUnsavedChanges(true)
   }
@@ -179,54 +213,74 @@ function ReportingForm() {
     markDirty()
   }
 
-  function handlePhotoChange(e) {
-    const file = e.target.files[0]
-    setPhotoFile(null)
-    setPhotoPreview(null)
-    setPhotoWarning(null)
-    if (!file) {
-      setPhotoFile(null)
-      setPhotoPreview(null)
-      return
+  function handlePhotosSelected(e) {
+    const files = Array.from(e.target.files || [])
+    // Reset so choosing the same file again still triggers a change event.
+    e.target.value = ''
+    if (files.length === 0) return
+
+    const warnings = []
+    const accepted = []
+    let slotsLeft = MAX_PHOTOS - photos.length
+
+    for (const file of files) {
+      const heic = isHeicFile(file)
+      if (!file.type.startsWith('image/') && !heic) {
+        warnings.push(`${file.name} isn\u2019t an image, so it was skipped.`)
+        continue
+      }
+      if (file.size > MAX_PHOTO_BYTES) {
+        warnings.push(`${file.name} is larger than 8MB, so it was skipped.`)
+        continue
+      }
+      if (slotsLeft <= 0) {
+        warnings.push(`You can add up to ${MAX_PHOTOS} photos. Extra photos were skipped.`)
+        break
+      }
+      accepted.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        file,
+        preview: heic ? null : URL.createObjectURL(file),
+        status: 'pending',
+      })
+      slotsLeft -= 1
     }
-    const isHeic = file.type === 'image/heic' || file.type === 'image/heif' || /\.hei[cf]$/i.test(file.name)
-    if (!file.type.startsWith('image/') && !isHeic) {
-      setPhotoWarning('Please choose an image file.')
-      return
+
+    setPhotoWarnings(warnings)
+    if (accepted.length > 0) {
+      setPhotos((prev) => [...prev, ...accepted])
+      markDirty()
     }
-    if (file.size > 8 * 1024 * 1024) {
-      setPhotoWarning('Image is larger than 8MB — please choose a smaller photo.')
-      return
-    }
-    setPhotoFile(file)
-    setPhotoPreview(isHeic ? null : URL.createObjectURL(file))
-    if (isHeic) {
-      setPhotoWarning('Preview isn\u2019t available for this file type, but it will still upload correctly.')
-    }
-    markDirty()
+  }
+
+  function removePhoto(id) {
+    const target = photos.find((p) => p.id === id)
+    if (target?.preview) URL.revokeObjectURL(target.preview)
+    setPhotos((prev) => prev.filter((p) => p.id !== id))
+    setPhotoWarnings([])
   }
 
   function handleContinueToReview(e) {
     e.preventDefault()
     if (!shape) {
-    setError('Please select the nest shape.')
-    return
+      setError('Please select the nest shape.')
+      return
     }
     if (!placement) {
-    setError('Please select where the nest is positioned.')
-    return
+      setError('Please select where the nest is positioned.')
+      return
     }
     if (!observedDate) {
-    setError('Please enter the observation date.')
-    return
+      setError('Please enter the observation date.')
+      return
     }
     if (!position) {
-    setError('Please set the nest location on the map.')
-    return
+      setError('Please set the nest location on the map.')
+      return
     }
-    if (!photoFile) {
-    setError('Please attach a photo of the nest.')
-    return
+    if (photos.length === 0) {
+      setError('Please add at least one photo of the nest.')
+      return
     }
     setError(null)
     setStep('review')
@@ -238,49 +292,76 @@ function ReportingForm() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  function handleFinishWithoutPhotos() {
+    setHasUnsavedChanges(false)
+    navigate('/confirmation')
+  }
+
   async function handleConfirmSubmit() {
     setSubmitting(true)
     setError(null)
 
-    const payload = {
-      species: species || null,
-      shape: shape || '',
-      placement: placement || '',
-      habitat: habitat || '',
-      materials: materials || '',
-      observed_date: observedDate || null,
-      description: notes || '',
-      contact_email: email || '',
-      location: {
-        exact_latitude: Number(position[0].toFixed(6)),
-        exact_longitude: Number(position[1].toFixed(6)),
-      },
-    }
+    let reportId = savedReportId
 
-    let response
-    try {
-      response = await publicApi.submitReport(payload)
-      console.log('Report submit response:', response)
-    } catch (err) {
-      setError(getFriendlyErrorMessage(err, 'Submitting your report'))
-      setSubmitting(false)
-      return
-    }
+    // Only create the report once. If photos fail and the user retries,
+    // we reuse the saved report instead of creating a duplicate.
+    if (!reportId) {
+      const payload = {
+        species: species || null,
+        shape: shape || '',
+        placement: placement || '',
+        habitat: habitat || '',
+        materials: materials || '',
+        observed_date: observedDate || null,
+        description: notes || '',
+        contact_email: email || '',
+        location: {
+          exact_latitude: Number(position[0].toFixed(6)),
+          exact_longitude: Number(position[1].toFixed(6)),
+        },
+      }
 
-    if (photoFile && response.id) {
       try {
-        const photoResponse = await publicApi.uploadPhoto(response.id, photoFile)
-        console.log('Photo upload response:', photoResponse)
+        const response = await publicApi.submitReport(payload)
+        console.log('Report submit response:', response)
+        reportId = response.id
+        setSavedReportId(reportId)
       } catch (err) {
-        setError(
-          `Your report was saved, but the photo couldn\u2019t be uploaded. ${getFriendlyErrorMessage(err, 'Uploading the photo')}`
-        )
+        setError(getFriendlyErrorMessage(err, 'Submitting your report'))
         setSubmitting(false)
         return
       }
     }
 
-    // Report is safely saved now — clear the unsaved-changes flag so no
+    // Upload photos one at a time, skipping any that already went through.
+    const toUpload = photos.filter((p) => p.status !== 'uploaded')
+    let failedCount = 0
+    let lastError = null
+
+    for (let i = 0; i < toUpload.length; i++) {
+      const photo = toUpload[i]
+      setUploadProgress({ current: i + 1, total: toUpload.length })
+      try {
+        await publicApi.uploadPhoto(reportId, photo.file)
+        setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, status: 'uploaded' } : p)))
+      } catch (err) {
+        failedCount += 1
+        lastError = err
+        setPhotos((prev) => prev.map((p) => (p.id === photo.id ? { ...p, status: 'failed' } : p)))
+      }
+    }
+
+    setUploadProgress(null)
+
+    if (failedCount > 0) {
+      setError(
+        `Your report was saved, but ${failedCount} of ${photos.length} photo${photos.length === 1 ? '' : 's'} couldn\u2019t be uploaded. ${getFriendlyErrorMessage(lastError, 'Uploading the photo')}`
+      )
+      setSubmitting(false)
+      return
+    }
+
+    // Everything is safely saved now — clear the unsaved-changes flag so no
     // browser warning appears on the way to the confirmation page.
     setHasUnsavedChanges(false)
     navigate('/confirmation')
@@ -290,7 +371,28 @@ function ReportingForm() {
   const fieldStyle = { width: '100%', background: BRAND.inputBg, border: `1px solid ${BRAND.border}`, color: BRAND.text, borderRadius: 8, padding: 10, fontSize: 14 }
   const fieldGroup = { marginBottom: 20 }
 
+  const thumbBox = { position: 'relative', aspectRatio: '1 / 1', borderRadius: 8, overflow: 'hidden', background: BRAND.inputBg, border: `1px solid ${BRAND.border}` }
+  const thumbImg = { width: '100%', height: '100%', objectFit: 'cover', display: 'block' }
+  const heicTile = { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, padding: 6, textAlign: 'center', color: BRAND.textMuted, fontSize: 10, wordBreak: 'break-all' }
+  const thumbGrid = { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(88px, 1fr))', gap: 10 }
+
+  const photoButtonStyle = (disabled) => ({
+    background: 'transparent',
+    color: disabled ? BRAND.textMuted : BRAND.text,
+    border: `1px solid ${BRAND.border}`,
+    borderRadius: 8,
+    padding: '10px 16px',
+    fontSize: 14,
+    cursor: disabled ? 'default' : 'pointer',
+    opacity: disabled ? 0.6 : 1,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+  })
+
   const selectedSpeciesName = speciesList.find((s) => s.id === species)?.name || 'Not sure / let a researcher decide'
+  const photosFull = photos.length >= MAX_PHOTOS
+  const hasHeicPhoto = photos.some((p) => !p.preview)
 
   // ============================================================
   // REVIEW STEP
@@ -302,6 +404,9 @@ function ReportingForm() {
         <div style={{ fontSize: 14, color: BRAND.text }}>{value || '—'}</div>
       </div>
     )
+
+    const statusLabel = { uploaded: 'Uploaded', failed: 'Failed', pending: 'Waiting' }
+    const statusColor = { uploaded: BRAND.accent, failed: '#E4685A', pending: BRAND.textMuted }
 
     return (
       <div>
@@ -329,19 +434,29 @@ function ReportingForm() {
                 {position[0].toFixed(5)}, {position[1].toFixed(5)}
               </p>
 
-              <p style={labelStyle}>Photo</p>
-              {photoFile ? (
-                photoPreview ? (
-                  <img
-                    src={photoPreview}
-                    alt="Nest preview"
-                    style={{ maxWidth: '100%', height: 160, objectFit: 'cover', borderRadius: 8, border: `1px solid ${BRAND.border}` }}
-                  />
-                ) : (
-                  <p style={{ fontSize: 13, color: BRAND.text }}>{photoFile.name} (preview unavailable, will still upload)</p>
-                )
+              <p style={labelStyle}>Photos ({photos.length})</p>
+              {photos.length > 0 ? (
+                <div style={thumbGrid}>
+                  {photos.map((p, index) => (
+                    <div key={p.id}>
+                      <div style={thumbBox}>
+                        {p.preview ? (
+                          <img src={p.preview} alt={`Nest photo ${index + 1} of ${photos.length}`} style={thumbImg} />
+                        ) : (
+                          <div style={heicTile}>
+                            <i className="ti ti-photo" style={{ fontSize: 20 }} aria-hidden="true"></i>
+                            {p.file.name}
+                          </div>
+                        )}
+                      </div>
+                      {savedReportId && (
+                        <p style={{ fontSize: 11, margin: '4px 0 0', color: statusColor[p.status] }}>{statusLabel[p.status]}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               ) : (
-                <p style={{ fontSize: 13, color: BRAND.textMuted }}>No photo attached</p>
+                <p style={{ fontSize: 13, color: BRAND.textMuted }}>No photos attached</p>
               )}
             </div>
           </div>
@@ -349,27 +464,29 @@ function ReportingForm() {
           {error && <p style={{ color: '#E4685A', fontSize: 13, marginTop: 20, marginBottom: 0 }}>{error}</p>}
 
           <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              onClick={handleBackToForm}
-              disabled={submitting}
-              style={{
-                background: 'transparent',
-                color: BRAND.textMuted,
-                border: `1px solid ${BRAND.border}`,
-                fontSize: 14,
-                fontWeight: 500,
-                padding: '12px 24px',
-                borderRadius: 8,
-                cursor: submitting ? 'default' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-              }}
-            >
-              <i className="ti ti-arrow-left" style={{ fontSize: 15 }} aria-hidden="true"></i>
-              Back to edit
-            </button>
+            {!savedReportId && (
+              <button
+                type="button"
+                onClick={handleBackToForm}
+                disabled={submitting}
+                style={{
+                  background: 'transparent',
+                  color: BRAND.textMuted,
+                  border: `1px solid ${BRAND.border}`,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  padding: '12px 24px',
+                  borderRadius: 8,
+                  cursor: submitting ? 'default' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <i className="ti ti-arrow-left" style={{ fontSize: 15 }} aria-hidden="true"></i>
+                Back to edit
+              </button>
+            )}
 
             <button
               type="button"
@@ -393,7 +510,12 @@ function ReportingForm() {
               {submitting ? (
                 <>
                   <i className="ti ti-loader-2" style={{ fontSize: 16 }} aria-hidden="true"></i>
-                  Submitting
+                  {uploadProgress ? `Uploading photo ${uploadProgress.current} of ${uploadProgress.total}` : 'Submitting'}
+                </>
+              ) : savedReportId ? (
+                <>
+                  <i className="ti ti-refresh" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                  Retry failed photos
                 </>
               ) : (
                 <>
@@ -402,6 +524,25 @@ function ReportingForm() {
                 </>
               )}
             </button>
+
+            {savedReportId && !submitting && (
+              <button
+                type="button"
+                onClick={handleFinishWithoutPhotos}
+                style={{
+                  background: 'transparent',
+                  color: BRAND.textMuted,
+                  border: `1px solid ${BRAND.border}`,
+                  fontSize: 14,
+                  fontWeight: 500,
+                  padding: '12px 24px',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                }}
+              >
+                Finish without these photos
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -558,15 +699,98 @@ function ReportingForm() {
               </div>
 
               <div style={fieldGroup}>
-                <label style={labelStyle}>Photo (*)</label>
-                <input type="file" accept="image/*" capture="environment" onChange={handlePhotoChange} style={{ color: BRAND.text, fontSize: 13 }} />
-                {photoWarning && <p style={{ color: '#E4685A', fontSize: 12, marginTop: 6 }}>{photoWarning}</p>}
-                {photoPreview && (
-                  <img
-                    src={photoPreview}
-                    alt="Nest preview"
-                    style={{ maxWidth: '100%', height: 140, objectFit: 'cover', display: 'block', marginTop: 10, borderRadius: 8, border: `1px solid ${BRAND.border}` }}
-                  />
+                <label style={labelStyle}>Photos (*)</label>
+                <p style={{ fontSize: 12, color: BRAND.textMuted, margin: '0 0 10px' }}>
+                  Add up to {MAX_PHOTOS} photos, 8MB each. {photos.length} of {MAX_PHOTOS} added.
+                </p>
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {IS_TOUCH_DEVICE && (
+                    <button
+                      type="button"
+                      onClick={() => cameraInputRef.current?.click()}
+                      disabled={photosFull}
+                      style={photoButtonStyle(photosFull)}
+                    >
+                      <i className="ti ti-camera" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                      Take photo
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => libraryInputRef.current?.click()}
+                    disabled={photosFull}
+                    style={photoButtonStyle(photosFull)}
+                  >
+                    <i className="ti ti-photo-plus" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                    {IS_TOUCH_DEVICE ? 'Choose from library' : 'Choose photos'}
+                  </button>
+                </div>
+
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handlePhotosSelected}
+                  hidden
+                />
+                <input
+                  ref={libraryInputRef}
+                  type="file"
+                  accept="image/*,.heic,.heif"
+                  multiple
+                  onChange={handlePhotosSelected}
+                  hidden
+                />
+
+                {photoWarnings.map((warning) => (
+                  <p key={warning} style={{ color: '#E4685A', fontSize: 12, marginTop: 8, marginBottom: 0 }}>{warning}</p>
+                ))}
+                {hasHeicPhoto && (
+                  <p style={{ color: BRAND.textMuted, fontSize: 12, marginTop: 8, marginBottom: 0 }}>
+                    Previews aren{'\u2019'}t available for HEIC photos, but they will still upload correctly.
+                  </p>
+                )}
+
+                {photos.length > 0 && (
+                  <div style={{ ...thumbGrid, marginTop: 12 }}>
+                    {photos.map((p, index) => (
+                      <div key={p.id} style={thumbBox}>
+                        {p.preview ? (
+                          <img src={p.preview} alt={`Nest photo ${index + 1} of ${photos.length}`} style={thumbImg} />
+                        ) : (
+                          <div style={heicTile}>
+                            <i className="ti ti-photo" style={{ fontSize: 20 }} aria-hidden="true"></i>
+                            {p.file.name}
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(p.id)}
+                          aria-label={`Remove photo ${index + 1}`}
+                          style={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            width: 24,
+                            height: 24,
+                            borderRadius: '50%',
+                            border: 'none',
+                            background: 'rgba(15,40,24,0.85)',
+                            color: BRAND.text,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            padding: 0,
+                          }}
+                        >
+                          <i className="ti ti-x" style={{ fontSize: 14 }} aria-hidden="true"></i>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
 
