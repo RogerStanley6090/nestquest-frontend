@@ -24,6 +24,7 @@ function ReportDetail() {
   const navigate = useNavigate()
   const [report, setReport] = useState(null)
   const [photos, setPhotos] = useState([])
+  const [activePhoto, setActivePhoto] = useState(0)
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState(null)
   const [status, setStatus] = useState('unverified')
@@ -35,11 +36,11 @@ function ReportDetail() {
 
   useEffect(() => {
     researcherApi.getReport(id)
-        .then((data) => {
-          setReport(data)
-          setStatus(data.status || 'unverified')
-          setFinalSpecies(data.final_species || data.species || '')
-        })
+      .then((data) => {
+        setReport(data)
+        setStatus(data.status || 'unverified')
+        setFinalSpecies(data.final_species || data.species || '')
+      })
       .catch((err) => {
         console.error('Could not load report:', err.message)
         setLoadError(err.message)
@@ -55,12 +56,12 @@ function ReportDetail() {
       })
 
     publicApi.getSpecies()
-        .then((data) => {
-          setSpeciesList(Array.isArray(data) ? data : data.results || [])
-        })
-        .catch((err) => {
-          console.log('Could not load species:', err.message)
-        })
+      .then((data) => {
+        setSpeciesList(Array.isArray(data) ? data : data.results || [])
+      })
+      .catch((err) => {
+        console.log('Could not load species:', err.message)
+      })
   }, [id])
 
   async function handleSave() {
@@ -70,7 +71,8 @@ function ReportDetail() {
       await researcherApi.updateStatus(id, status)
       await researcherApi.addReview(id, {
         notes,
-        final_species: finalSpecies || null,})
+        final_species: finalSpecies || null,
+      })
       navigate('/dashboard')
     } catch (err) {
       setError(`Could not save: ${err.message}`)
@@ -87,8 +89,12 @@ function ReportDetail() {
   const species = report?.species || 'Unknown'
   const submittedDate = report?.created_at || report?.date || '—'
   const contactEmail = report?.contact_email || '—'
-  const firstPhotoUrl = photos[0]?.photo_url || null
   const statusMeta = STATUS_META[status] || STATUS_META.unverified
+
+  // Only photos whose link could be generated can be shown.
+  const photoItems = photos.filter((p) => p.photo_url)
+  const activeIndex = Math.min(activePhoto, Math.max(photoItems.length - 1, 0))
+  const activePhotoUrl = photoItems[activeIndex]?.photo_url || null
 
   const labelStyle = { fontSize: 12, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }
   const fieldStyle = { width: '100%', background: '#0F2818', border: `1px solid ${BRAND.border}`, color: BRAND.text, borderRadius: 8, padding: 10, fontSize: 13 }
@@ -116,13 +122,54 @@ function ReportDetail() {
       <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
         <div className="nq-two-col">
           <div>
-            <p style={labelStyle}>Photo</p>
-            {firstPhotoUrl ? (
-              <img
-                src={firstPhotoUrl}
-                alt="Submitted nest"
-                style={{ width: '100%', height: 170, objectFit: 'contain', background: '#0F2818', borderRadius: 10, marginBottom: 18 }}
-              />
+            <p style={labelStyle}>
+              {photoItems.length > 1 ? `Photos (${photoItems.length})` : 'Photo'}
+            </p>
+            {activePhotoUrl ? (
+              <>
+                <img
+                  src={activePhotoUrl}
+                  alt={`Submitted nest, photo ${activeIndex + 1} of ${photoItems.length}`}
+                  style={{ width: '100%', height: 200, objectFit: 'contain', background: '#0F2818', borderRadius: 10, marginBottom: 10 }}
+                />
+
+                {photoItems.length > 1 && (
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                    {photoItems.map((p, index) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setActivePhoto(index)}
+                        aria-label={`Show photo ${index + 1} of ${photoItems.length}`}
+                        aria-current={index === activeIndex}
+                        style={{
+                          padding: 0,
+                          width: 56,
+                          height: 56,
+                          borderRadius: 8,
+                          overflow: 'hidden',
+                          background: '#0F2818',
+                          border: `2px solid ${index === activeIndex ? BRAND.accent : BRAND.border}`,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <a
+                  href={activePhotoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nq-link"
+                  style={{ fontSize: 12, color: BRAND.accent, display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 18 }}
+                >
+                  <i className="ti ti-external-link" style={{ fontSize: 13 }} aria-hidden="true"></i>
+                  Open full size
+                </a>
+              </>
             ) : (
               <div style={{ background: '#0F2818', border: `1px solid ${BRAND.border}`, borderRadius: 10, height: 170, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
                 <i className="ti ti-photo" style={{ fontSize: 32, color: '#4D6B48' }} aria-hidden="true"></i>
@@ -165,15 +212,15 @@ function ReportDetail() {
 
             <p style={labelStyle}>Final species</p>
             <select
-                value={finalSpecies}
-                onChange={(e) => setFinalSpecies(e.target.value)}
-                style={{ ...fieldStyle, marginBottom: 18 }}
+              value={finalSpecies}
+              onChange={(e) => setFinalSpecies(e.target.value)}
+              style={{ ...fieldStyle, marginBottom: 18 }}
             >
               <option value="">Select species</option>
-              {speciesList.map((species) => (
-                  <option key={species.id} value={species.id}>
-                    {species.name}
-                  </option>
+              {speciesList.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
               ))}
             </select>
 
