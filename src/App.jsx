@@ -20,6 +20,23 @@ const BRAND = {
   textMuted: '#8A9483',
 }
 
+const FOOTER_TEXT = '#B7C0AC'
+
+const footerHeading = {
+  fontSize: 12,
+  color: BRAND.accent,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+  fontWeight: 600,
+  margin: '0 0 12px',
+}
+
+const footerLink = {
+  color: FOOTER_TEXT,
+  textDecoration: 'none',
+  fontSize: 14,
+}
+
 function App() {
   const navigate = useNavigate()
   const isLoggedIn = Boolean(localStorage.getItem('nq_auth_token'))
@@ -43,7 +60,7 @@ function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <header
         className="nq-header"
         style={{ background: BRAND.header, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(147,187,74,0.15)' }}
@@ -86,7 +103,7 @@ function App() {
         </nav>
       </header>
 
-      <main className="nq-main" style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <main className="nq-main" style={{ flex: 1, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/guide" element={<IdentificationGuide />} />
@@ -114,6 +131,65 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
+
+      <footer
+        style={{
+          background: BRAND.header,
+          borderTop: '1px solid rgba(147,187,74,0.15)',
+          marginTop: 40,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: 1200,
+            margin: '0 auto',
+            padding: '32px 24px 20px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 32,
+            justifyContent: 'space-between',
+          }}
+        >
+          <div style={{ maxWidth: 320 }}>
+            <p style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 20, color: BRAND.text, margin: '0 0 8px' }}>
+              Nest<span style={{ color: BRAND.accent }}>Quest</span>
+            </p>
+            <p style={{ fontSize: 13, color: FOOTER_TEXT, lineHeight: 1.6, margin: 0 }}>
+              Citizen science for Aotearoa’s native birds. Spot a nest, report it, and help researchers protect it.
+            </p>
+          </div>
+
+          <div>
+            <p style={footerHeading}>Explore</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <Link to="/guide" style={footerLink}>Identification guide</Link>
+              <Link to="/report" style={footerLink}>Report a nest</Link>
+              <Link to="/map" style={footerLink}>Nest map</Link>
+            </div>
+          </div>
+
+          <div style={{ maxWidth: 300 }}>
+            <p style={footerHeading}>Your privacy</p>
+            <p style={{ fontSize: 13, color: FOOTER_TEXT, lineHeight: 1.6, margin: 0 }}>
+              Exact nest locations are never shown publicly, and photos have hidden location data removed before they’re stored.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ borderTop: '1px solid rgba(147,187,74,0.1)' }}>
+          <p
+            style={{
+              maxWidth: 1200,
+              margin: '0 auto',
+              padding: '14px 24px',
+              fontSize: 12,
+              color: BRAND.textMuted,
+            }}
+          >
+            © {new Date().getFullYear()} Katana and Curry · Unitec | Te Pūkenga · Capstone Project ISCG7431
+          </p>
+        </div>
+      </footer>
     </div>
   )
 }
