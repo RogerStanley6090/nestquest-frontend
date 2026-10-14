@@ -15,19 +15,6 @@ const STATUS_META = {
   needs_info: { label: 'Needs info', bg: '#E4685A', text: '#3D0F0A', icon: 'ti-help' },
 }
 
-const SPECIES_NAMES = {
-  1: 'Blackbird',
-  2: 'Fantail / Pīwakawaka',
-  3: 'Silvereye / Tauhou',
-  4: 'Grey Warbler / Riroriro',
-  5: 'Song Thrush',
-}
-
-function formatSpecies(species) {
-  if (species == null) return '—'
-  if (typeof species === 'object') return species.name || '—'
-  return SPECIES_NAMES[species] || `Species #${species}`
-}
 
 function formatCoordinates(location) {
   if (!location) return '—'
@@ -59,7 +46,7 @@ const DEFAULT_SORT_DIR = 'asc'
 
 function getSortValue(report, key) {
   if (key === 'id') return report.id
-  if (key === 'species') return formatSpecies(report.species).toLowerCase()
+  if (key === 'species') return (report.species_name || '').toLowerCase()
   if (key === 'location') {
   return (report.location?.location_name || formatCoordinates(report.location)
   ).toLowerCase()
@@ -114,7 +101,7 @@ function Dashboard() {
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter
     const matchesSearch =
       searchTerm.trim() === '' ||
-      formatSpecies(r.species).toLowerCase().includes(searchTerm.trim().toLowerCase())
+      (r.species_name || '').toLowerCase().includes(searchTerm.trim().toLowerCase())
     return matchesStatus && matchesSearch
   })
 
@@ -262,7 +249,7 @@ function Dashboard() {
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 15, color: '#93BB4A' }}>#{r.id}</span>
                     </td>
-                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{formatSpecies(r.species)}</td>
+                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{r.species_name || '—'}</td>
                     <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{r.location?.location_name || formatCoordinates(r.location)}</td>
                     <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{r.date || r.created_at || '—'}</td>
                     <td style={{ padding: '12px 16px' }}>
