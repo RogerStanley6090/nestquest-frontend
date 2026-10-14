@@ -80,6 +80,23 @@ function ReportDetail() {
       setSaving(false)
     }
   }
+  async function handleExportPdf() {
+    try {
+      setError(null)
+      const blob = await researcherApi.exportPdf(id)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `nestquest-report-${id}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      console.error('Could not export PDF:', err)
+      setError(`Could not export PDF: ${err.message}`)
+    }
+  }
 
   if (loading) return <p>Loading report...</p>
 
@@ -270,6 +287,12 @@ function ReportDetail() {
                   Save changes
                 </>
               )}
+            </button>
+            <button
+                type="button" onClick={handleExportPdf} className="nq-button"
+                style={{ background: 'transparent', color: BRAND.accent, border: `1px solid ${BRAND.accent}`, fontSize: 14, fontWeight: 500, padding: '12px 20px', width: '100%', borderRadius: 8, cursor: 'pointer', marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,}}>
+              <i className="ti ti-file-type-pdf" style={{ fontSize: 16 }} aria-hidden="true"/>
+              Export PDF
             </button>
           </div>
         </div>

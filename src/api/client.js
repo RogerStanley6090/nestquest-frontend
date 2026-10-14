@@ -40,6 +40,40 @@ async function request(path, options = {}) {
   return response.json()
 }
 
+async function requestBlob(path, options = {}) {
+  const url = `${BASE_URL}${path}`
+  const token = localStorage.getItem('nq_auth_token')
+
+  const headers = {
+    ...(token ? { Authorization: `Token ${token}` } : {}),
+    ...options.headers,
+  }
+
+  let response
+
+  try {
+    response = await fetch(url, {
+      ...options,
+      headers,
+    })
+  } catch {
+    const err = new Error('Network request failed')
+    err.status = null
+    err.isNetworkError = true
+    throw err
+  }
+
+  if (!response.ok) {
+    const err = new Error(
+      `PDF export failed: ${response.status} ${response.statusText}`
+    )
+    err.status = response.status
+    throw err
+  }
+
+  return response.blob()
+}
+
 export const api = {
   get: (path) => request(path, { method: 'GET' }),
   post: (path, body) => {
@@ -74,4 +108,8 @@ export const researcherApi = {
   addReview: (id, review) => api.post(`/api/researcher/reports/${id}/review/`, review),
   exportReports: () => api.get('/api/researcher/reports/export/'),
   getPhotosForReport: (reportId) => api.get(`/api/nest-photos/?report=${reportId}`),
+  exportPdf: (id) =>
+  requestBlob(`/api/researcher/reports/${id}/export-pdf/`, {
+    method: 'GET',
+  }),
 }
