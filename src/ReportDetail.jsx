@@ -33,6 +33,7 @@ function ReportDetail() {
   const [finalSpecies, setFinalSpecies] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     researcherApi.getReport(id)
@@ -78,6 +79,23 @@ function ReportDetail() {
       setError(`Could not save: ${err.message}`)
     } finally {
       setSaving(false)
+    }
+  }
+  async function handleDelete() {
+    const confirmed = window.confirm(
+        'Are you sure you want to permanently delete this report? This action cannot be undone.'
+    )
+    if (!confirmed) return
+    setDeleting(true)
+    setError(null)
+    try {
+      await researcherApi.deleteReport(id)
+      navigate('/dashboard')
+    } catch (err) {
+      console.error('Could not delete report:', err)
+      setError(`Could not delete report: ${err.message}`)
+    } finally {
+      setDeleting(false)
     }
   }
   async function handleExportPdf() {
@@ -293,6 +311,21 @@ function ReportDetail() {
                 style={{ background: 'transparent', color: BRAND.accent, border: `1px solid ${BRAND.accent}`, fontSize: 14, fontWeight: 500, padding: '12px 20px', width: '100%', borderRadius: 8, cursor: 'pointer', marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,}}>
               <i className="ti ti-file-type-pdf" style={{ fontSize: 16 }} aria-hidden="true"/>
               Export PDF
+            </button>
+            <button
+                type="button" onClick={handleDelete} disabled={deleting} className="nq-button"
+                style={{background: 'transparent', color: '#E4685A', border: '1px solid #E4685A', fontSize: 14, fontWeight: 500, padding: '12px 20px', width: '100%', borderRadius: 8, cursor: deleting ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10,}}>
+              {deleting ? (
+                  <>
+                    <i className="ti ti-loader-2" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                    Deleting
+                  </>
+              ) : (
+                  <>
+                    <i className="ti ti-trash" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                    Delete Report
+                  </>
+              )}
             </button>
           </div>
         </div>

@@ -4,7 +4,6 @@ import IdentificationGuide from './IdentificationGuide.jsx'
 import ReportingForm from './ReportingForm.jsx'
 import Confirmation from './Confirmation.jsx'
 import PublicMap from './PublicMap.jsx'
-import Reports from './Reports.jsx'
 import Login from './Login.jsx'
 import Dashboard from './Dashboard.jsx'
 import ReportDetail from './ReportDetail.jsx'
@@ -73,7 +72,6 @@ function App() {
           <NavLink to="/guide" style={navLinkStyle}>Guide</NavLink>
           <NavLink to="/report" style={navLinkStyle}>Report</NavLink>
           <NavLink to="/map" style={navLinkStyle}>Map</NavLink>
-          <NavLink to="/reports" style={navLinkStyle}>Reports</NavLink>
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
@@ -110,7 +108,6 @@ function App() {
           <Route path="/report" element={<ReportingForm />} />
           <Route path="/confirmation" element={<Confirmation />} />
           <Route path="/map" element={<PublicMap />} />
-          <Route path="/reports" element={<Reports />} />
           <Route path="/login" element={<Login />} />
           <Route
             path="/dashboard"

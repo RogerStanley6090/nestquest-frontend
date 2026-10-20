@@ -81,6 +81,7 @@ export const api = {
     return request(path, { method: 'POST', body: isFormData ? body : JSON.stringify(body) })
   },
   patch: (path, body) => request(path, { method: 'PATCH', body: JSON.stringify(body) }),
+  delete: (path) => request(path, {method: 'DELETE',}),
 }
 
 // ---- Public endpoints ----
@@ -107,6 +108,7 @@ export const researcherApi = {
   updateStatus: (id, status) => api.patch(`/api/researcher/reports/${id}/status_update/`, { status }),
   addReview: (id, review) => api.post(`/api/researcher/reports/${id}/review/`, review),
   exportReports: () => api.get('/api/researcher/reports/export/'),
+  deleteReport: (id) => api.delete(`/api/researcher/reports/${id}/`),
   getPhotosForReport: (reportId) => api.get(`/api/nest-photos/?report=${reportId}`),
   exportPdf: (id) =>
   requestBlob(`/api/researcher/reports/${id}/export-pdf/`, {
