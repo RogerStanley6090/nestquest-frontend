@@ -128,10 +128,10 @@ function PublicMap() {
   return (
     <div>
       <Link
-        to="/reports"
+        to="/"
         style={{fontSize: 13, color: BRAND.accent, textDecoration: 'none', display: 'inline-block', marginBottom: 12,}}
       >
-        &larr; Back to Reports
+        &larr; Back to Home
       </Link>
 
       <h2>Nest Map</h2>
