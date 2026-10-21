@@ -25,15 +25,32 @@ const BRAND = {
 // matching species from the real API list (not a hardcoded ID, since IDs
 // can differ between environments/databases).
 const GUIDE_KEY_TO_NAME_HINT = {
-  blackbird: 'blackbird',
-  fantail: 'fantail',
-  silvereye: 'silvereye',
-  greywarbler: 'grey warbler',
-  songthrush: 'song thrush',
+  blackbird: ['blackbird'],
+  fantail: ['fantail'],
+  silvereye: ['silvereye'],
+  greywarbler: ['grey warbler'],
+  songthrush: ['song thrush'],
+  tui: ['tūī', 'tui'],
+  magpie: ['magpie'],
+  chaffinch: ['chaffinch'],
+  goldfinch: ['goldfinch'],
+  greenfinch: ['greenfinch'],
+  housesparrow: ['house sparrow', 'sparrow'],
+  welcomeswallow: ['swallow'],
+  myna: ['myna'],
+  starling: ['starling'],
+  dunnock: ['dunnock'],
+  yellowhammer: ['yellowhammer'],
+}
+
+// The guide's wording for this answer differs slightly from the form's option
+const GUIDE_PLACEMENT_MAP = {
+  'In a hedge/shrub/tree but attachment unclear': 'In a hedge, shrub, or tree',
 }
 
 const SHAPE_OPTIONS = [
   'Open cup or bowl',
+  'Broad, flat platform-like nest',
   'Enclosed dome / hanging pouch',
   'Messy cavity / enclosed space',
   'Not sure',
@@ -43,6 +60,10 @@ const PLACEMENT_OPTIONS = [
   'In a fork',
   'Supported from below',
   'Hanging / suspended',
+  'High up in a tree',
+  'Close to the ground / in long grass',
+  'Fixed to a ledge, wall, bridge or building',
+  'Inside a hole, roof gap or nest box',
   'In a hedge, shrub, or tree',
   'Not sure',
 ]
@@ -111,7 +132,9 @@ function ReportingForm() {
 
   const [species, setSpecies] = useState('')
   const [shape, setShape] = useState(guideAnswers.nest_shape || '')
-  const [placement, setPlacement] = useState(guideAnswers.position_type || '')
+  const [placement, setPlacement] = useState(
+    GUIDE_PLACEMENT_MAP[guideAnswers.position_type] || guideAnswers.position_type || ''
+  )
   const [habitat, setHabitat] = useState('')
   const [materials, setMaterials] = useState('')
   const [observedDate, setObservedDate] = useState(new Date().toISOString().split('T')[0])
@@ -143,9 +166,11 @@ function ReportingForm() {
         const list = Array.isArray(data) ? data : data.results || []
         setSpeciesList(list)
 
-        const hint = GUIDE_KEY_TO_NAME_HINT[guideAnswers.key_result]
-        if (hint) {
-          const match = list.find((s) => s.name.toLowerCase().includes(hint))
+        const hints = GUIDE_KEY_TO_NAME_HINT[guideAnswers.key_result]
+        if (hints) {
+          const match = list.find((s) =>
+            hints.some((h) => s.name.toLowerCase().includes(h))
+          )
           if (match) setSpecies(match.id)
         }
       })
