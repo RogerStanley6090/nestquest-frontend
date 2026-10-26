@@ -303,10 +303,6 @@ function ReportingForm() {
       setError('Please set the nest location on the map.')
       return
     }
-    if (photos.length === 0) {
-      setError('Please add at least one photo of the nest.')
-      return
-    }
     setError(null)
     setStep('review')
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -724,7 +720,7 @@ function ReportingForm() {
               </div>
 
               <div style={fieldGroup}>
-                <label style={labelStyle}>Photos (*)</label>
+                <label style={labelStyle}>Photos (optional)</label>
                 <p style={{ fontSize: 12, color: BRAND.textMuted, margin: '0 0 10px' }}>
                   Add up to {MAX_PHOTOS} photos, 8MB each. {photos.length} of {MAX_PHOTOS} added.
                 </p>
