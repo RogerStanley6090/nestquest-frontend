@@ -30,6 +30,17 @@ const SPECIES_COLORS = {
   'grey warbler': '#9A9A92',
   blackbird: '#333333',
   'song thrush': '#E5A83A',
+  tui: '#7B5CD6',
+  'australian magpie': '#5C5C5C',
+  chaffinch: '#D97A4A',
+  'european goldfinch': '#E6C34A',
+  'european greenfinch': '#7FA34A',
+  'house sparrow': '#9B7653',
+  'welcome swallow': '#4A7FB3',
+  'common myna': '#8A6A3A',
+  'common starling': '#5B6F7A',
+  dunnock: '#8B8177',
+  yellowhammer: '#D9B83E',
   unknown: '#777777',
 }
 
@@ -40,6 +51,17 @@ function getSpeciesKey(name) {
   if (value.includes('grey warbler')) return 'grey warbler'
   if (value.includes('blackbird')) return 'blackbird'
   if (value.includes('song thrush')) return 'song thrush'
+  if (value.includes('tūī') || value.includes('tui')) return 'tui'
+  if (value.includes('australian magpie')) return 'australian magpie'
+  if (value.includes('chaffinch')) return 'chaffinch'
+  if (value.includes('european goldfinch')) return 'european goldfinch'
+  if (value.includes('european greenfinch')) return 'european greenfinch'
+  if (value.includes('house sparrow')) return 'house sparrow'
+  if (value.includes('welcome swallow')) return 'welcome swallow'
+  if (value.includes('common myna')) return 'common myna'
+  if (value.includes('common starling')) return 'common starling'
+  if (value.includes('dunnock')) return 'dunnock'
+  if (value.includes('yellowhammer')) return 'yellowhammer'
   return 'unknown'
 }
 
