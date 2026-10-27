@@ -44,9 +44,13 @@ const SORT_COLUMNS = [
 const DEFAULT_SORT_KEY = 'id'
 const DEFAULT_SORT_DIR = 'asc'
 
+function getDisplaySpecies(report) {
+  return report.final_species_name || report.final_species || report.species_name || '—'
+}
+
 function getSortValue(report, key) {
   if (key === 'id') return report.id
-  if (key === 'species') return (report.species_name || '').toLowerCase()
+  if (key === 'species') return getDisplaySpecies(report).toLowerCase()
   if (key === 'location') {
   return (report.location?.location_name || formatCoordinates(report.location)
   ).toLowerCase()
@@ -101,7 +105,7 @@ function Dashboard() {
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter
     const matchesSearch =
       searchTerm.trim() === '' ||
-      (r.species_name || '').toLowerCase().includes(searchTerm.trim().toLowerCase())
+      getDisplaySpecies(r).toLowerCase().includes(searchTerm.trim().toLowerCase())
     return matchesStatus && matchesSearch
   })
 
@@ -249,7 +253,7 @@ function Dashboard() {
                     <td style={{ padding: '12px 16px' }}>
                       <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 15, color: '#93BB4A' }}>#{r.id}</span>
                     </td>
-                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{r.species_name || '—'}</td>
+                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{getDisplaySpecies(r)}</td>
                     <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{r.location?.location_name || formatCoordinates(r.location)}</td>
                     <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{r.date || r.created_at || '—'}</td>
                     <td style={{ padding: '12px 16px' }}>
