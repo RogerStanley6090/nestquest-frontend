@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Routes, Route, NavLink, Link, useNavigate } from 'react-router-dom'
 import Home from './Home.jsx'
 import IdentificationGuide from './IdentificationGuide.jsx'
@@ -21,6 +22,50 @@ const BRAND = {
 
 const FOOTER_TEXT = '#B7C0AC'
 
+// Styles for the phone menu button and the "skip to content" link.
+// !important is used so these rules win over the inline styles on the nav.
+const RESPONSIVE_CSS = `
+  .nq-skip {
+    position: absolute;
+    left: -9999px;
+    top: 8px;
+    background: #93BB4A;
+    color: #0F2818;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    text-decoration: none;
+    z-index: 1000;
+  }
+  .nq-skip:focus { left: 8px; }
+  .nq-menu-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 42px;
+    height: 42px;
+    background: transparent;
+    border: 1px solid rgba(147, 187, 74, 0.45);
+    border-radius: 8px;
+    color: #93BB4A;
+    cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    .nq-header { flex-wrap: wrap !important; }
+    .nq-menu-btn { display: inline-flex; }
+    .nq-nav {
+      display: none !important;
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start !important;
+      gap: 16px !important;
+      padding: 16px 0 8px;
+    }
+    .nq-nav.nq-nav-open { display: flex !important; }
+  }
+`
+
 const footerHeading = {
   fontSize: 12,
   color: BRAND.accent,
@@ -39,6 +84,17 @@ const footerLink = {
 function App() {
   const navigate = useNavigate()
   const isLoggedIn = Boolean(localStorage.getItem('nq_auth_token'))
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Pressing Escape closes the phone menu
+  useEffect(() => {
+    if (!menuOpen) return
+    function onKeyDown(e) {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [menuOpen])
 
   function handleLogout() {
     localStorage.removeItem('nq_auth_token')
@@ -60,6 +116,8 @@ function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <style>{RESPONSIVE_CSS}</style>
+      <a href="#main-content" className="nq-skip">Skip to main content</a>
       <header
         className="nq-header"
         style={{ background: BRAND.header, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(147,187,74,0.15)' }}
@@ -67,7 +125,28 @@ function App() {
         <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
           <img src={nestquestLogo} alt="NestQuest" className="nq-logo" style={{ display: 'block' }} />
         </Link>
-        <nav className="nq-nav" style={{ display: 'flex', alignItems: 'center' }}>
+        <button
+          type="button"
+          className="nq-menu-btn"
+          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={menuOpen}
+          aria-controls="nq-main-nav"
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            {menuOpen ? (
+              <path d="M6 6l12 12M18 6L6 18" />
+            ) : (
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            )}
+          </svg>
+        </button>
+        <nav
+          id="nq-main-nav"
+          className={`nq-nav${menuOpen ? ' nq-nav-open' : ''}`}
+          style={{ display: 'flex', alignItems: 'center' }}
+          onClick={() => setMenuOpen(false)}
+        >
           <NavLink to="/" end style={navLinkStyle}>Home</NavLink>
           <NavLink to="/guide" style={navLinkStyle}>Guide</NavLink>
           <NavLink to="/report" style={navLinkStyle}>Report</NavLink>
@@ -101,7 +180,7 @@ function App() {
         </nav>
       </header>
 
-      <main className="nq-main" style={{ flex: 1, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
+      <main id="main-content" tabIndex={-1} className="nq-main" style={{ flex: 1, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/guide" element={<IdentificationGuide />} />

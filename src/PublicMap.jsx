@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MapContainer, TileLayer, Marker, Popup,} from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { publicApi } from './api/client.js'
@@ -104,54 +104,117 @@ function getMaskedPosition(report) {
   return [Number(lat), Number(lng)]
 }
 
+
+// Zooms the map so every plotted nest is in view
+function FitToMarkers({ positions }) {
+  const map = useMap()
+
+  useEffect(() => {
+    if (positions.length === 0) return
+    if (positions.length === 1) {
+      map.setView(positions[0], 13)
+      return
+    }
+    map.fitBounds(L.latLngBounds(positions), { padding: [40, 40], maxZoom: 14 })
+  }, [map, positions])
+
+  return null
+}
+
 function PublicMap() {
   const [reports, setReports] = useState(MOCK_REPORTS)
   const [usingMockData, setUsingMockData] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [attempt, setAttempt] = useState(0)
   const [selectedSpecies, setSelectedSpecies] = useState('all')
 
   useEffect(() => {
+    let cancelled = false
+
     publicApi
-      .getVerifiedReports().then((data) => {
-        const list = Array.isArray(data)
-          ? data
-          : data.results || []
+      .getVerifiedReports()
+      .then((data) => {
+        if (cancelled) return
+        const list = Array.isArray(data) ? data : data.results || []
         setReports(list)
         setUsingMockData(false)
       })
       .catch((err) => {
-        console.log(
-          'Could not reach real API, using mock data:',
-          err.message
-        )
+        if (cancelled) return
+        console.log('Could not reach real API, using mock data:', err.message)
         setUsingMockData(true)
-      }).finally(() => setLoading(false))
-  }, [])
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [attempt])
+
+  function retry() {
+    setLoading(true)
+    setAttempt((n) => n + 1)
+  }
 
   // Automatically create species filters from API data
-  const speciesNames = [
-    ...new Set(
-      reports
-        .map((r) => r.species_name).filter(Boolean)
-    ),
-  ]
-
-  const filteredReports =
-    selectedSpecies === 'all'
-      ? reports
-      : reports.filter(
-          (r) => r.species_name === selectedSpecies
-        )
-
-  const plottableReports = filteredReports.filter(
-    (r) => getMaskedPosition(r) !== null
+  const speciesNames = useMemo(
+    () => [...new Set(reports.map((r) => r.species_name).filter(Boolean))],
+    [reports]
   )
+
+  const filteredReports = useMemo(
+    () =>
+      selectedSpecies === 'all'
+        ? reports
+        : reports.filter((r) => r.species_name === selectedSpecies),
+    [reports, selectedSpecies]
+  )
+
+  const plottableReports = useMemo(
+    () => filteredReports.filter((r) => getMaskedPosition(r) !== null),
+    [filteredReports]
+  )
+
+  const positions = useMemo(
+    () => plottableReports.map((r) => getMaskedPosition(r)),
+    [plottableReports]
+  )
+
+  const noticeBox = {
+    background: BRAND.card,
+    border: `1px solid ${BRAND.border}`,
+    borderRadius: 8,
+    padding: '12px 14px',
+    marginBottom: 18,
+    fontSize: 13,
+    color: BRAND.textMuted,
+    lineHeight: 1.5,
+  }
+
+  function chipStyle(selected, color) {
+    return {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 7,
+      padding: '8px 14px',
+      borderRadius: 20,
+      border: `1px solid ${selected ? color : BRAND.border}`,
+      background: selected ? color : BRAND.card,
+      color: selected ? '#111' : BRAND.text,
+      fontSize: 13,
+      cursor: 'pointer',
+    }
+  }
 
   return (
     <div>
+      <style>{`@keyframes nq-spin { to { transform: rotate(360deg); } }`}</style>
+
       <Link
         to="/"
-        style={{fontSize: 13, color: BRAND.accent, textDecoration: 'none', display: 'inline-block', marginBottom: 12,}}
+        style={{ fontSize: 13, color: BRAND.accent, textDecoration: 'none', display: 'inline-block', marginBottom: 12 }}
       >
         &larr; Back to Home
       </Link>
@@ -159,51 +222,80 @@ function PublicMap() {
       <h2>Nest Map</h2>
 
       {/* Privacy notice */}
-      <div
-        style={{background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 8, padding: '12px 14px', marginBottom: 18, fontSize: 13, color: BRAND.textMuted, lineHeight: 1.5,}}
-      >
-        <strong style={{ color: BRAND.text }}>
-          Location privacy:
-        </strong>{' '}
-        Locations shown on this map are approximate.
-        Exact nest locations are hidden for privacy and
-        conservation purposes.
+      <div style={noticeBox}>
+        <strong style={{ color: BRAND.text }}>Location privacy:</strong>{' '}
+        Locations shown on this map are approximate. Exact nest locations are hidden for
+        privacy and conservation purposes.
       </div>
 
-      {loading && <p>Loading...</p>}
-
-      {usingMockData && !loading && (
-        <p
-          style={{color: BRAND.textMuted, fontSize: 12,}}
+      {/* Loading state (the server can take a while to wake up) */}
+      {loading && (
+        <div
+          role="status"
+          style={{ ...noticeBox, display: 'flex', alignItems: 'center', gap: 12 }}
         >
-          Showing placeholder data — not yet connected to
-          the live API.
-        </p>
+          <span
+            aria-hidden="true"
+            style={{
+              width: 18,
+              height: 18,
+              border: `2px solid ${BRAND.border}`,
+              borderTopColor: BRAND.accent,
+              borderRadius: '50%',
+              display: 'inline-block',
+              flexShrink: 0,
+              animation: 'nq-spin 0.8s linear infinite',
+            }}
+          />
+          <span>
+            <strong style={{ color: BRAND.text }}>Loading nest reports…</strong>
+            <br />
+            The first load can take up to a minute while the server wakes up.
+          </span>
+        </div>
       )}
 
-      {/* Species filters */}
+      {/* Could not reach the server */}
+      {usingMockData && !loading && (
+        <div
+          role="alert"
+          style={{ ...noticeBox, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}
+        >
+          <span>
+            Couldn’t reach the server, so this map is showing placeholder data.
+          </span>
+          <button
+            type="button"
+            onClick={retry}
+            style={{
+              padding: '7px 16px',
+              borderRadius: 8,
+              border: `1px solid ${BRAND.accent}`,
+              background: 'transparent',
+              color: BRAND.accent,
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      )}
+
+      {/* Species filters (each chip colour matches its map marker) */}
       {!loading && (
         <div
-          style={{display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 18,}}
+          role="group"
+          aria-label="Filter nests by species"
+          style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}
         >
           <button
             type="button"
+            aria-pressed={selectedSpecies === 'all'}
             onClick={() => setSelectedSpecies('all')}
-            style={{padding: '8px 14px', borderRadius: 20,
-              border: `1px solid ${
-                selectedSpecies === 'all'
-                  ? BRAND.accent
-                  : BRAND.border
-              }`,
-              background:
-                selectedSpecies === 'all'
-                  ? BRAND.accent
-                  : BRAND.card,
-              color:
-                selectedSpecies === 'all'
-                  ? '#0F2818'
-                  : BRAND.text,
-              cursor: 'pointer',
+            style={{
+              ...chipStyle(selectedSpecies === 'all', BRAND.accent),
+              color: selectedSpecies === 'all' ? '#0F2818' : BRAND.text,
             }}
           >
             All
@@ -217,40 +309,21 @@ function PublicMap() {
               <button
                 key={name}
                 type="button"
-                onClick={() =>
-                  setSelectedSpecies(name)
-                }
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  padding: '8px 14px',
-                  borderRadius: 20,
-                  border: `1px solid ${
-                    selected
-                      ? color
-                      : BRAND.border
-                  }`,
-                  background: selected
-                    ? color
-                    : BRAND.card,
-                  color: selected
-                    ? '#111'
-                    : BRAND.text,
-                  cursor: 'pointer',
-                }}
+                aria-pressed={selected}
+                onClick={() => setSelectedSpecies(name)}
+                style={chipStyle(selected, color)}
               >
                 <span
+                  aria-hidden="true"
                   style={{
-                    width: 9,
-                    height: 9,
+                    width: 10,
+                    height: 10,
                     borderRadius: '50%',
                     background: color,
                     border: '1px solid white',
                     display: 'inline-block',
                   }}
                 />
-
                 {name}
               </button>
             )
@@ -258,31 +331,46 @@ function PublicMap() {
         </div>
       )}
 
-      {!loading &&
-        !usingMockData &&
-        plottableReports.length <
-          filteredReports.length && (
-          <p
-            style={{
-              color: BRAND.textMuted,
-              fontSize: 12,
-            }}
-          >
-            {filteredReports.length -
-              plottableReports.length}{' '}
-            report(s) hidden — missing location data.
-          </p>
-        )}
+      {/* Summary line */}
+      {!loading && !usingMockData && (
+        <p style={{ color: BRAND.textMuted, fontSize: 13, margin: '0 0 12px' }}>
+          Showing {plottableReports.length} verified{' '}
+          {plottableReports.length === 1 ? 'nest' : 'nests'}
+          {selectedSpecies !== 'all' ? ` for ${selectedSpecies}` : ''}.
+          {plottableReports.length < filteredReports.length &&
+            ` ${filteredReports.length - plottableReports.length} hidden (missing location data).`}
+        </p>
+      )}
+
+      {/* Empty state */}
+      {!loading && !usingMockData && plottableReports.length === 0 && (
+        <div style={noticeBox}>
+          <strong style={{ color: BRAND.text }}>No verified nests to show yet.</strong>
+          <br />
+          {selectedSpecies === 'all'
+            ? 'Reports appear here after a researcher has verified them.'
+            : 'Try another species, or choose All.'}
+        </div>
+      )}
 
       <MapContainer
         center={[-36.8523, 174.7642]}
         zoom={12}
-        style={{height: 450, width: '100%', borderRadius: 10,}}
+        style={{
+          height: 'min(560px, 65vh)',
+          minHeight: 340,
+          width: '100%',
+          borderRadius: 12,
+          border: `1px solid ${BRAND.border}`,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+        }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
         />
+
+        <FitToMarkers positions={positions} />
 
         {plottableReports.map((r) => (
           <Marker
@@ -291,9 +379,7 @@ function PublicMap() {
             icon={createSpeciesIcon(r.species_name)}
           >
             <Popup>
-              <strong>
-                {r.species_name || 'Unknown species'}
-              </strong>
+              <strong>{r.species_name || 'Unknown species'}</strong>
               <br />
               Approximate location
             </Popup>
