@@ -13,7 +13,7 @@ const BRAND = {
   card: '#173722',
   border: '#234A2E',
   text: '#F5EFD9',
-  textMuted: '#8A9483',
+  textMuted: '#A3AD9B',
   accent: '#93BB4A',
   inputBg: '#0F2818',
   warn: '#E5A83A',
@@ -72,6 +72,23 @@ const A = {
   birdMyna: 'A common myna',
   birdOther: 'Another bird',
   birdNone: 'No / not sure',
+}
+
+// Icons for the answers where a picture helps (all other answers get a letter badge)
+const OPTION_ICONS = {
+  [A.shapeCup]: 'ti-bowl',
+  [A.shapePlatform]: 'ti-layout-board',
+  [A.shapeDome]: 'ti-home',
+  [A.shapeCavity]: 'ti-door',
+  [A.notSure]: 'ti-help-circle',
+  [A.posFork]: 'ti-git-fork',
+  [A.posBelow]: 'ti-arrow-bar-up',
+  [A.posHanging]: 'ti-hanger',
+  [A.posCanopy]: 'ti-trees',
+  [A.posGround]: 'ti-plant',
+  [A.posLedge]: 'ti-building',
+  [A.posHole]: 'ti-door',
+  [A.posUnclear]: 'ti-help-circle',
 }
 
 const CAVITY_BIRDS = ['housesparrow', 'starling', 'myna']
@@ -354,7 +371,7 @@ function IdentificationGuide() {
   const cardStyle = {
     background: BRAND.card,
     border: `1px solid ${BRAND.border}`,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 28,
     boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
   }
@@ -363,10 +380,8 @@ function IdentificationGuide() {
     background: disabled ? '#6E8A5E' : BRAND.accent,
     color: '#0F2818',
     border: 'none',
-    fontSize: 14,
-    fontWeight: 500,
-    padding: '12px 28px',
-    borderRadius: 8,
+    padding: '14px 28px',
+    borderRadius: 999,
     cursor: disabled ? 'default' : 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
@@ -377,10 +392,8 @@ function IdentificationGuide() {
     background: 'transparent',
     color: BRAND.textMuted,
     border: `1px solid ${BRAND.border}`,
-    fontSize: 14,
-    fontWeight: 500,
-    padding: '12px 24px',
-    borderRadius: 8,
+    padding: '14px 24px',
+    borderRadius: 999,
     cursor: 'pointer',
     display: 'inline-flex',
     alignItems: 'center',
@@ -404,14 +417,14 @@ function IdentificationGuide() {
     return (
       <div>
         <h1 style={{ color: BRAND.accent, fontSize: 28, margin: '0 0 20px' }}>Before you begin</h1>
-        <div style={{ ...cardStyle, maxWidth: 620 }}>
+        <div className="nq-glass" style={{ ...cardStyle, maxWidth: 620 }}>
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start', marginBottom: 24 }}>
             <div style={{ width: 44, height: 44, borderRadius: 10, background: BRAND.warn, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <i className="ti ti-alert-triangle" style={{ fontSize: 22, color: '#3D2A05' }} aria-hidden="true"></i>
             </div>
             <p style={{ fontSize: 14, color: BRAND.text, margin: 0, lineHeight: 1.6 }}>{SAFETY_MESSAGE}</p>
           </div>
-          <button className="nq-button" onClick={() => setShowSafety(false)} style={primaryButton(false)}>
+          <button className="nq-btn nq-btn-primary" onClick={() => setShowSafety(false)} style={primaryButton(false)}>
             <i className="ti ti-check" style={{ fontSize: 16 }} aria-hidden="true"></i>
             I understand — continue
           </button>
@@ -430,7 +443,7 @@ function IdentificationGuide() {
         <h1 style={{ color: BRAND.accent, fontSize: 28, margin: '0 0 20px' }}>
           {isUnknown ? 'Not sure yet' : 'Likely match result'}
         </h1>
-        <div style={{ ...cardStyle, maxWidth: 620 }}>
+        <div className="nq-glass" style={{ ...cardStyle, maxWidth: 620 }}>
           {isUnknown && (
             <p style={{ fontSize: 14, color: BRAND.text, lineHeight: 1.6 }}>
               No problem — nest identification can be tricky, and "unknown" is a perfectly good
@@ -492,16 +505,16 @@ function IdentificationGuide() {
 
           <div style={{ display: 'flex', gap: 12, marginTop: 24, flexWrap: 'wrap' }}>
             {!isUnknown && (
-              <button onClick={notMyNest} style={secondaryButton}>
+              <button onClick={notMyNest} className="nq-btn nq-btn-secondary" style={secondaryButton}>
                 <i className="ti ti-x" style={{ fontSize: 15 }} aria-hidden="true"></i>
                 That's not my nest
               </button>
             )}
-            <button onClick={resetGuide} style={secondaryButton}>
+            <button onClick={resetGuide} className="nq-btn nq-btn-secondary" style={secondaryButton}>
               <i className="ti ti-refresh" style={{ fontSize: 15 }} aria-hidden="true"></i>
               Start again
             </button>
-            <button className="nq-button" onClick={goToReportingForm} style={primaryButton(false)}>
+            <button className="nq-btn nq-btn-primary" onClick={goToReportingForm} style={primaryButton(false)}>
               <i className="ti ti-send" style={{ fontSize: 16 }} aria-hidden="true"></i>
               Submit a report
             </button>
@@ -514,72 +527,71 @@ function IdentificationGuide() {
   // ============================================================
   // QUESTION STEPS
   // ============================================================
+  const percent = Math.round(((stepIndex + 1) / visibleSteps.length) * 100)
+
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <h1 style={{ color: BRAND.accent, fontSize: 24, margin: 0 }}>Identification guide</h1>
-        <span style={{ fontSize: 13, color: BRAND.textMuted }}>
-          Step {stepIndex + 1} of {visibleSteps.length}
+    <div style={{ maxWidth: 760, margin: '0 auto' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <h1 className="nq-eyebrow" style={{ margin: 0 }}>Identification guide</h1>
+        <span className="nq-step-count">
+          <span>Step {stepIndex + 1} of {visibleSteps.length}</span>
+          <span aria-hidden="true"> · {percent}%</span>
         </span>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 24 }}>
-        {visibleSteps.map((s, i) => (
-          <div
-            key={s.key}
-            style={{
-              flex: 1,
-              height: 4,
-              borderRadius: 2,
-              background: i <= stepIndex ? BRAND.accent : BRAND.border,
-              transition: 'background 0.2s ease',
-            }}
-          />
-        ))}
+      <div
+        className="nq-progress"
+        role="progressbar"
+        aria-label="Guide progress"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+      >
+        <i style={{ width: `${percent}%` }} />
       </div>
 
-      <div style={{ ...cardStyle, maxWidth: 620 }}>
-        <h2 style={{ color: BRAND.text, fontSize: 19, margin: '0 0 20px', lineHeight: 1.4 }}>{step.question}</h2>
+      <h2 style={{ color: BRAND.text, fontSize: 'clamp(24px, 4vw, 32px)', margin: '0 0 8px', lineHeight: 1.25 }}>
+        {step.question}
+      </h2>
+      <p style={{ color: BRAND.textMuted, fontSize: 14, margin: '0 0 22px' }}>
+        Please don&rsquo;t touch or move the nest. &ldquo;Not sure&rdquo; is always a fine answer.
+      </p>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-          {step.options.map((option) => {
-            const selected = answers[step.key] === option
-            return (
-              <button
-                key={option}
-                onClick={() => selectOption(option)}
-                className="nq-pill"
-                style={{
-                  textAlign: 'left',
-                  background: selected ? 'rgba(147,187,74,0.12)' : BRAND.inputBg,
-                  border: `1px solid ${selected ? BRAND.accent : BRAND.border}`,
-                  color: BRAND.text,
-                  borderRadius: 8,
-                  padding: '12px 16px',
-                  fontSize: 14,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 10,
-                }}
-              >
-                {option}
-                {selected && <i className="ti ti-check" style={{ fontSize: 16, color: BRAND.accent, flexShrink: 0 }} aria-hidden="true"></i>}
-              </button>
-            )
-          })}
-        </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 26 }}>
+        {step.options.map((option, i) => {
+          const selected = answers[step.key] === option
+          const icon = OPTION_ICONS[option]
+          return (
+            <button
+              key={option}
+              onClick={() => selectOption(option)}
+              aria-pressed={selected}
+              className={`nq-opt${selected ? ' nq-opt-selected' : ''}`}
+            >
+              <span className="nq-opt-badge" aria-hidden="true">
+                {icon ? <i className={`ti ${icon}`} /> : String.fromCharCode(65 + i)}
+              </span>
+              <span className="nq-opt-label">{option}</span>
+              <span className="nq-opt-radio" aria-hidden="true" />
+            </button>
+          )
+        })}
+      </div>
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button onClick={goBack} disabled={stepIndex === 0} style={{ ...secondaryButton, opacity: stepIndex === 0 ? 0.5 : 1, cursor: stepIndex === 0 ? 'default' : 'pointer' }}>
-            <i className="ti ti-arrow-left" style={{ fontSize: 15 }} aria-hidden="true"></i>
-            Back
-          </button>
-          <button className="nq-button" onClick={goNext} disabled={!hasAnswered} style={primaryButton(!hasAnswered)}>
-            {isLastStep ? 'See likely match' : 'Next'}
-            <i className={`ti ti-${isLastStep ? 'search' : 'arrow-right'}`} style={{ fontSize: 15 }} aria-hidden="true"></i>
-          </button>
-        </div>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between' }}>
+        <button
+          onClick={goBack}
+          disabled={stepIndex === 0}
+          className="nq-btn nq-btn-secondary"
+          style={{ ...secondaryButton, opacity: stepIndex === 0 ? 0.45 : 1, cursor: stepIndex === 0 ? 'default' : 'pointer' }}
+        >
+          <i className="ti ti-arrow-left" style={{ fontSize: 15 }} aria-hidden="true"></i>
+          Back
+        </button>
+        <button className="nq-btn nq-btn-primary" onClick={goNext} disabled={!hasAnswered} style={primaryButton(!hasAnswered)}>
+          {isLastStep ? 'See likely match' : 'Next'}
+          <i className={`ti ti-${isLastStep ? 'search' : 'arrow-right'}`} style={{ fontSize: 15 }} aria-hidden="true"></i>
+        </button>
       </div>
     </div>
   )
