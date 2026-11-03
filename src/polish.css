@@ -1,0 +1,109 @@
+/* ---------- Offline banner ---------- */
+.nq-offline {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(560px, calc(100vw - 32px));
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: #3A2A12;
+  border: 1px solid #E8A33D;
+  color: #FBE7C2;
+  font-size: 14px;
+  line-height: 1.4;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+.nq-offline i { font-size: 18px; flex-shrink: 0; }
+.nq-offline-ok { background: #173722; border-color: #93BB4A; color: #F5EFD9; }
+@media (prefers-reduced-motion: no-preference) {
+  .nq-offline { animation: nq-offline-in 0.3s ease both; }
+}
+@keyframes nq-offline-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ---------- 404 page ---------- */
+.nq-empty-nest { display: inline-block; }
+@media (prefers-reduced-motion: no-preference) {
+  .nq-empty-nest { animation: nq-nest-bob 4s ease-in-out infinite; }
+}
+@keyframes nq-nest-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.nq-404-path {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(15, 40, 24, 0.7);
+  border: 1px solid #234A2E;
+  color: #C3CBB9;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nq-404-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid #234A2E;
+  background: rgba(147, 187, 74, 0.08);
+  color: #F5EFD9;
+  font-size: 14px;
+  text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.nq-404-chip i { color: #93BB4A; font-size: 17px; }
+.nq-404-chip:hover, .nq-404-chip:focus-visible {
+  background: rgba(147, 187, 74, 0.18);
+  border-color: #93BB4A;
+  transform: translateY(-1px);
+}
+
+/* ---------- Thank-you page: gentle falling leaves ---------- */
+.nq-thanks { position: relative; overflow: hidden; }
+.nq-thanks > *:not(.nq-leaves) { position: relative; z-index: 1; }
+.nq-leaves { position: absolute; inset: 0; pointer-events: none; z-index: 0; }
+.nq-leaf {
+  position: absolute;
+  top: -20px;
+  opacity: 0;
+  border-radius: 0 100% 0 100%;
+  display: none;
+}
+.nq-leaf-0 { background: #93BB4A; }
+.nq-leaf-1 { background: #B9D77A; }
+.nq-leaf-2 { background: #F5EFD9; }
+@media (prefers-reduced-motion: no-preference) {
+  .nq-leaf {
+    display: block;
+    animation-name: nq-leaf-fall;
+    animation-timing-function: ease-in;
+    animation-fill-mode: forwards;
+    animation-iteration-count: 1;
+  }
+}
+@keyframes nq-leaf-fall {
+  0% { opacity: 0; transform: translate(0, 0) rotate(0deg); }
+  12% { opacity: 0.85; }
+  70% { opacity: 0.7; }
+  100% { opacity: 0; transform: translate(var(--drift), 340px) rotate(300deg); }
+}
+
+/* ---------- Dark-theme contrast boost (for bright sunlight) ----------
+   Brightens the dimmest grey-green text. Inline hex colours are
+   serialised by the browser as rgb(), so we match on those. */
+[style*="color: rgb(163, 173, 155)"] { color: #C3CBB9 !important; }   /* was #A3AD9B */
+[style*="color: rgb(183, 192, 172)"] { color: #D0D8C6 !important; }   /* was #B7C0AC */
+.nq-eyebrow { color: #A9CE5E; }
