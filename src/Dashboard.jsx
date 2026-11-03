@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { researcherApi } from './api/client.js'
+import './dashboard.css'
 
 const MOCK_REPORTS = [
   { id: 1, species: 'Blackbird', location: 'Henderson Park', date: '12 Aug', status: 'unverified' },
@@ -63,20 +64,35 @@ function getSortValue(report, key) {
 function Dashboard() {
   const [reports, setReports] = useState(MOCK_REPORTS)
   const [usingMockData, setUsingMockData] = useState(true)
+  const [loading, setLoading] = useState(true)
+  const [attempt, setAttempt] = useState(0)
   const [statusFilter, setStatusFilter] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [sortKey, setSortKey] = useState(DEFAULT_SORT_KEY)
   const [sortDir, setSortDir] = useState(DEFAULT_SORT_DIR)
 
   useEffect(() => {
-  researcherApi.listReports().then((data) => {
+    let cancelled = false
+    researcherApi.listReports().then((data) => {
+      if (cancelled) return
       setReports(data)
       setUsingMockData(false)
     }).catch((err) => {
+      if (cancelled) return
       console.log('Could not reach real API, using mock data:', err.message)
       setUsingMockData(true)
+    }).finally(() => {
+      if (!cancelled) setLoading(false)
     })
-}, [])
+    return () => {
+      cancelled = true
+    }
+  }, [attempt])
+
+  function retry() {
+    setLoading(true)
+    setAttempt((n) => n + 1)
+  }
 
   function handleSort(key) {
     if (sortKey === key) {
@@ -120,158 +136,154 @@ function Dashboard() {
   }
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 4, flexWrap: 'wrap', gap: 8 }}>
-        <h1 style={{ color: '#93BB4A', fontSize: 28, margin: 0 }}>Researcher dashboard</h1>
-        <span style={{ color: '#8A9483', fontSize: 13 }}>{reports.length} reports</span>
+    <div style={{ padding: '16px 0' }}>
+      <div className="nq-dash-head">
+        <div>
+          <p className="nq-eyebrow">Researcher area</p>
+          <h1 style={{ color: '#F5EFD9', fontSize: 'clamp(28px, 4vw, 36px)', margin: 0 }}>Researcher dashboard</h1>
+        </div>
+        <span className="nq-dash-count">{loading ? 'Loading…' : `${reports.length} reports`}</span>
       </div>
 
-      {usingMockData && (
-        <p style={{ color: '#8A9483', fontSize: 12, marginBottom: 16 }}>
-          Showing placeholder data — not yet connected to the live API.
-        </p>
+      {loading && (
+        <div className="nq-dash-banner" role="status">
+          <span>
+            <i className="ti ti-loader-2" aria-hidden="true" />
+            Loading reports. The first load can take up to a minute while the server wakes up.
+          </span>
+        </div>
       )}
 
-      <div className="nq-stat-grid" style={{ margin: '20px 0 28px' }}>
+      {!loading && usingMockData && (
+        <div className="nq-dash-banner" role="alert">
+          <span>
+            <i className="ti ti-plug-off" aria-hidden="true" />
+            Couldn’t reach the server, so this is placeholder data.
+          </span>
+          <button type="button" onClick={retry}>Try again</button>
+        </div>
+      )}
+
+      <div className="nq-stat-grid" style={{ margin: '22px 0 28px' }}>
         {FILTERS.filter((f) => f.key !== 'all').map((f) => {
           const meta = STATUS_META[f.key]
           const isActive = statusFilter === f.key
           return (
             <button
               key={f.key}
+              type="button"
               onClick={() => setStatusFilter(isActive ? 'all' : f.key)}
-              className="nq-stat-card"
-              style={{
-                background: '#173722',
-                border: isActive ? `1px solid ${meta.bg}` : '1px solid #234A2E',
-                borderRadius: 12,
-                padding: '16px 18px',
-                textAlign: 'left',
-                position: 'relative',
-                overflow: 'hidden',
-                cursor: 'pointer',
-              }}
+              aria-pressed={isActive}
+              className={`nq-dstat${isActive ? ' nq-dstat-active' : ''}`}
+              style={{ '--c': meta.bg, '--ct': meta.text }}
             >
-              <div style={{ position: 'absolute', top: 0, left: 0, width: 4, height: '100%', background: meta.bg }} />
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <p style={{ fontSize: 12, color: '#8A9483', margin: 0, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{f.label}</p>
-                <div style={{ width: 26, height: 26, borderRadius: 7, background: meta.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <i className={`ti ${meta.icon}`} style={{ fontSize: 14, color: meta.text }} aria-hidden="true"></i>
-                </div>
+              <div className="nq-dstat-top">
+                <span className="nq-dstat-label">{f.label}</span>
+                <span className="nq-dstat-icon" aria-hidden="true">
+                  <i className={`ti ${meta.icon}`} style={{ fontSize: 15 }}></i>
+                </span>
               </div>
-              <p style={{ fontSize: 28, fontWeight: 500, color: '#F5EFD9', margin: 0, fontFamily: "'Fraunces', Georgia, serif" }}>
-                {statusCounts[f.key] || 0}
-              </p>
+              <span className="nq-dstat-num">{statusCounts[f.key] || 0}</span>
             </button>
           )
         })}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', maxWidth: 340, flex: 1, minWidth: 200 }}>
-          <i className="ti ti-search" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 15, color: '#6E8A5E' }} aria-hidden="true"></i>
+        <div className="nq-dsearch">
+          <i className="ti ti-search" aria-hidden="true"></i>
           <input
             type="text"
+            aria-label="Search by species"
             placeholder="Search by species"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ width: '100%', paddingLeft: 34, background: '#173722', border: '1px solid #2E5C3E', color: '#F5EFD9', borderRadius: 8, height: 38 }}
           />
         </div>
 
         {filtersActive && (
-          <button
-            onClick={resetFilters}
-            className="nq-view-link"
-            style={{
-              background: 'transparent',
-              border: '1px solid #2E5C3E',
-              color: '#B7C0AC',
-              fontSize: 13,
-              padding: '8px 14px',
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
-          >
+          <button type="button" onClick={resetFilters} className="nq-dreset">
             <i className="ti ti-refresh" style={{ fontSize: 14 }} aria-hidden="true"></i>
             Reset filters
           </button>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-        {FILTERS.map((f) => {
-          const active = statusFilter === f.key
-          return (
-            <button
-              key={f.key}
-              onClick={() => setStatusFilter(f.key)}
-              className={`nq-pill ${active ? 'nq-pill-active' : ''}`}
-              style={{
-                background: active ? '#93BB4A' : 'transparent',
-                color: active ? '#0F2818' : '#C9CFC0',
-                border: active ? 'none' : '1px solid #2E5C3E',
-                fontSize: 13,
-                fontWeight: active ? 500 : 400,
-                padding: '7px 16px',
-                borderRadius: 20,
-              }}
-            >
-              {f.label}
-            </button>
-          )
-        })}
+      <div role="group" aria-label="Filter by status" style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        {FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => setStatusFilter(f.key)}
+            aria-pressed={statusFilter === f.key}
+            className="nq-dpill"
+          >
+            {f.label}
+          </button>
+        ))}
       </div>
 
-      <div style={{ background: '#173722', border: '1px solid #234A2E', borderRadius: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
+      <div className="nq-dtable-wrap">
         <div className="nq-table-scroll">
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <table className="nq-dtable" style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #234A2E' }}>
+              <tr>
                 {SORT_COLUMNS.map((col) => (
                   <th
                     key={col.key}
-                    onClick={() => handleSort(col.key)}
-                    style={{ textAlign: 'left', padding: '14px 16px', fontWeight: 500, color: '#8A9483', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}
+                    aria-sort={sortKey === col.key ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
-                    {col.label}
-                    {sortKey === col.key && (
-                      <i className={`ti ti-arrow-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 12, marginLeft: 4, verticalAlign: 'middle' }} aria-hidden="true"></i>
-                    )}
+                    <button type="button" className="nq-th-btn" data-active={sortKey === col.key} onClick={() => handleSort(col.key)}>
+                      {col.label}
+                      {sortKey === col.key && (
+                        <i className={`ti ti-arrow-${sortDir === 'asc' ? 'up' : 'down'}`} style={{ fontSize: 13 }} aria-hidden="true"></i>
+                      )}
+                    </button>
                   </th>
                 ))}
-                <th></th>
+                <th><span style={{ position: 'absolute', left: -9999 }}>Actions</span></th>
               </tr>
             </thead>
             <tbody>
-              {visibleReports.map((r, i) => {
-                const meta = STATUS_META[r.status] || STATUS_META.unverified
-                return (
-                  <tr key={r.id} className="nq-row" style={{ borderBottom: i === visibleReports.length - 1 ? 'none' : '1px solid #1F3F28' }}>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ fontFamily: "'Fraunces', Georgia, serif", fontSize: 15, color: '#93BB4A' }}>#{r.id}</span>
-                    </td>
-                    <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{getDisplaySpecies(r)}</td>
-                    <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{r.location?.location_name || formatCoordinates(r.location)}</td>
-                    <td style={{ padding: '12px 16px', color: '#B7C0AC', whiteSpace: 'nowrap' }}>{r.date || r.created_at || '—'}</td>
-                    <td style={{ padding: '12px 16px' }}>
-                      <span style={{ background: meta.bg, color: meta.text, fontSize: 12, padding: '3px 12px', borderRadius: 20, fontWeight: 500, whiteSpace: 'nowrap' }}>
-                        {meta.label}
-                      </span>
-                    </td>
-                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                      <Link to={`/dashboard/report/${r.id}`} className="nq-view-link" style={{ color: '#93BB4A', fontSize: 13, fontWeight: 500 }}>View</Link>
-                    </td>
-                  </tr>
-                )
-              })}
+              {loading
+                ? [0, 1, 2, 3].map((n) => (
+                    <tr key={n} className="nq-dskel" aria-hidden="true">
+                      {[0, 1, 2, 3, 4, 5].map((c) => (
+                        <td key={c}><span style={{ width: c === 0 ? 40 : c === 5 ? 50 : 110 }} /></td>
+                      ))}
+                    </tr>
+                  ))
+                : visibleReports.map((r) => {
+                    const meta = STATUS_META[r.status] || STATUS_META.unverified
+                    return (
+                      <tr key={r.id}>
+                        <td><span className="nq-id">#{r.id}</span></td>
+                        <td>{getDisplaySpecies(r)}</td>
+                        <td style={{ color: '#B7C0AC' }}>{r.location?.location_name || formatCoordinates(r.location)}</td>
+                        <td style={{ color: '#B7C0AC' }}>{r.date || r.created_at || '—'}</td>
+                        <td>
+                          <span className="nq-badge" style={{ background: meta.bg, color: meta.text }}>
+                            <i className={`ti ${meta.icon}`} aria-hidden="true"></i>
+                            {meta.label}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
+                          <Link to={`/dashboard/report/${r.id}`} className="nq-vlink" aria-label={`View report ${r.id}`}>
+                            View
+                            <i className="ti ti-arrow-right" aria-hidden="true"></i>
+                          </Link>
+                        </td>
+                      </tr>
+                    )
+                  })}
             </tbody>
           </table>
         </div>
-        {visibleReports.length === 0 && (
-          <p style={{ padding: '24px 16px', textAlign: 'center', color: '#8A9483' }}>No reports match this filter.</p>
+        {!loading && visibleReports.length === 0 && (
+          <div className="nq-dempty">
+            <i className="ti ti-inbox" aria-hidden="true"></i>
+            <p style={{ margin: 0 }}>No reports match this filter.</p>
+          </div>
         )}
       </div>
     </div>
