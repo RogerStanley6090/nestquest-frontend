@@ -47,7 +47,7 @@ function ReportDetail() {
       .then((data) => {
         setReport(data)
         setStatus(data.status || 'unverified')
-        setFinalSpecies(data.final_species || data.species || '')
+        setFinalSpecies(data.final_species?.id ?? data.final_species ?? data.species?.id ?? data.species ?? '')
       })
       .catch((err) => {
         console.error('Could not load report:', err.message)
@@ -157,7 +157,7 @@ function ReportDetail() {
   const loc = report?.location
   const exactLat = loc?.exact_latitude ?? loc?.masked_latitude ?? -36.8523
   const exactLng = loc?.exact_longitude ?? loc?.masked_longitude ?? 174.7642
-  const species = report?.species || 'Unknown'
+  const speciesName = report?.final_species_name || report?.species_name || 'Unknown'
   const submittedDate = formatDate(report?.created_at || report?.date || '—')
   const contactEmail = report?.contact_email || '—'
   const statusMeta = STATUS_META[status] || STATUS_META.unverified
@@ -240,7 +240,7 @@ function ReportDetail() {
               </li>
               <li>
                 <i className="ti ti-feather" aria-hidden="true"></i>
-                <span><small>Suggested species</small>{report?.species_name || species}</span>
+                <span><small>Suggested species</small>{speciesName}</span>
               </li>
               <li>
                 <i className="ti ti-mail" aria-hidden="true"></i>
