@@ -43,7 +43,19 @@ const SORT_COLUMNS = [
 ]
 
 const DEFAULT_SORT_KEY = 'id'
-const DEFAULT_SORT_DIR = 'asc'
+const DEFAULT_SORT_DIR = 'desc'
+
+// "2026-08-25" -> "25 Aug 2026". Falls back to the raw text if it isn't a date.
+function formatDate(value) {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return value
+  return d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function csvCell(value) {
+  return `"${String(value ?? '').replace(/"/g, '""')}"`
+}
 
 function getDisplaySpecies(report) {
   return report.final_species_name || report.final_species || report.species_name || '—'
@@ -101,6 +113,26 @@ function Dashboard() {
       setSortKey(key)
       setSortDir('asc')
     }
+  }
+
+  function downloadCsv() {
+    const header = ['Report #', 'Species', 'Location', 'Date', 'Status']
+    const rows = visibleReports.map((r) => [
+      r.id,
+      getDisplaySpecies(r),
+      r.location?.location_name || formatCoordinates(r.location),
+      r.date || r.created_at || '',
+      (STATUS_META[r.status] || STATUS_META.unverified).label,
+    ])
+    const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'nestquest-reports.csv'
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
   }
 
   function resetFilters() {
@@ -201,6 +233,11 @@ function Dashboard() {
           />
         </div>
 
+        <button type="button" onClick={downloadCsv} className="nq-dreset" disabled={loading || visibleReports.length === 0}>
+          <i className="ti ti-download" style={{ fontSize: 14 }} aria-hidden="true"></i>
+          Download CSV
+        </button>
+
         {filtersActive && (
           <button type="button" onClick={resetFilters} className="nq-dreset">
             <i className="ti ti-refresh" style={{ fontSize: 14 }} aria-hidden="true"></i>
@@ -260,7 +297,7 @@ function Dashboard() {
                         <td><span className="nq-id">#{r.id}</span></td>
                         <td>{getDisplaySpecies(r)}</td>
                         <td style={{ color: '#B7C0AC' }}>{r.location?.location_name || formatCoordinates(r.location)}</td>
-                        <td style={{ color: '#B7C0AC' }}>{r.date || r.created_at || '—'}</td>
+                        <td style={{ color: '#B7C0AC' }}>{formatDate(r.date || r.created_at)}</td>
                         <td>
                           <span className="nq-badge" style={{ background: meta.bg, color: meta.text }}>
                             <i className={`ti ${meta.icon}`} aria-hidden="true"></i>
