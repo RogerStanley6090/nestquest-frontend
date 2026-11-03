@@ -16,7 +16,7 @@ const BRAND = {
   card: '#173722',
   border: '#234A2E',
   text: '#F5EFD9',
-  textMuted: '#8A9483',
+  textMuted: '#A3AD9B',
   accent: '#93BB4A',
   inputBg: '#0F2818',
 }
@@ -388,8 +388,10 @@ function ReportingForm() {
     navigate('/confirmation')
   }
 
-  const labelStyle = { fontSize: 12, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px', display: 'block' }
-  const fieldStyle = { width: '100%', background: BRAND.inputBg, border: `1px solid ${BRAND.border}`, color: BRAND.text, borderRadius: 8, padding: 10, fontSize: 14 }
+  const [dragging, setDragging] = useState(false)
+
+  const labelStyle = { fontFamily: 'var(--font-ui)', fontSize: 12, fontWeight: 700, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.14em', margin: '0 0 8px', display: 'block' }
+  const fieldStyle = { width: '100%', background: BRAND.inputBg, border: `1px solid ${BRAND.border}`, color: BRAND.text, borderRadius: 10, padding: '12px 14px', fontSize: 15, transition: 'border-color 0.15s ease, box-shadow 0.15s ease' }
   const fieldGroup = { marginBottom: 20 }
 
   const thumbBox = { position: 'relative', aspectRatio: '1 / 1', borderRadius: 8, overflow: 'hidden', background: BRAND.inputBg, border: `1px solid ${BRAND.border}` }
@@ -401,8 +403,8 @@ function ReportingForm() {
     background: 'transparent',
     color: disabled ? BRAND.textMuted : BRAND.text,
     border: `1px solid ${BRAND.border}`,
-    borderRadius: 8,
-    padding: '10px 16px',
+    borderRadius: 999,
+    padding: '10px 18px',
     fontSize: 14,
     cursor: disabled ? 'default' : 'pointer',
     opacity: disabled ? 0.6 : 1,
@@ -431,12 +433,13 @@ function ReportingForm() {
 
     return (
       <div>
-        <h1 style={{ color: BRAND.accent, fontSize: 28, margin: '0 0 6px' }}>Review your report</h1>
+        <p className="nq-eyebrow">Final check</p>
+        <h1 style={{ color: BRAND.text, fontSize: 'clamp(28px, 4vw, 36px)', margin: '0 0 8px' }}>Review your report</h1>
         <p style={{ fontSize: 13, color: BRAND.textMuted, marginBottom: 24 }}>
           Please check everything below before submitting. You can go back to make changes.
         </p>
 
-        <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
+        <div className="nq-glass" style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 16, padding: 'clamp(18px, 3vw, 30px)', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
           <div className="nq-two-col">
             <div>
               {reviewRow('Species', selectedSpeciesName)}
@@ -490,14 +493,13 @@ function ReportingForm() {
                 type="button"
                 onClick={handleBackToForm}
                 disabled={submitting}
+                className="nq-btn nq-btn-secondary"
                 style={{
                   background: 'transparent',
                   color: BRAND.textMuted,
                   border: `1px solid ${BRAND.border}`,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  padding: '12px 24px',
-                  borderRadius: 8,
+                  padding: '14px 24px',
+                  borderRadius: 999,
                   cursor: submitting ? 'default' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -513,15 +515,13 @@ function ReportingForm() {
               type="button"
               onClick={handleConfirmSubmit}
               disabled={submitting}
-              className="nq-button"
+              className="nq-btn nq-btn-primary"
               style={{
                 background: submitting ? '#6E8A5E' : BRAND.accent,
                 color: '#0F2818',
                 border: 'none',
-                fontSize: 14,
-                fontWeight: 500,
-                padding: '12px 28px',
-                borderRadius: 8,
+                padding: '14px 28px',
+                borderRadius: 999,
                 cursor: submitting ? 'default' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -550,14 +550,13 @@ function ReportingForm() {
               <button
                 type="button"
                 onClick={handleFinishWithoutPhotos}
+                className="nq-btn nq-btn-secondary"
                 style={{
                   background: 'transparent',
                   color: BRAND.textMuted,
                   border: `1px solid ${BRAND.border}`,
-                  fontSize: 14,
-                  fontWeight: 500,
-                  padding: '12px 24px',
-                  borderRadius: 8,
+                  padding: '14px 24px',
+                  borderRadius: 999,
                   cursor: 'pointer',
                 }}
               >
@@ -575,7 +574,8 @@ function ReportingForm() {
   // ============================================================
   return (
     <div>
-      <h1 style={{ color: BRAND.accent, fontSize: 28, margin: '0 0 6px' }}>Report a nest</h1>
+      <p className="nq-eyebrow">Nest details</p>
+      <h1 style={{ color: BRAND.text, fontSize: 'clamp(28px, 4vw, 36px)', margin: '0 0 8px' }}>Report a nest</h1>
 
       {!cameFromGuide && (
         <p style={{ fontSize: 13, color: BRAND.textMuted, marginBottom: 24 }}>
@@ -586,9 +586,10 @@ function ReportingForm() {
       )}
 
       <form onSubmit={handleContinueToReview}>
-        <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
+        <div className="nq-glass" style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 16, padding: 'clamp(18px, 3vw, 30px)', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
           <div className="nq-two-col">
             <div>
+              <div className="nq-sec"><span className="nq-sec-num" aria-hidden="true">1</span>About the nest</div>
               <div style={fieldGroup}>
                 <label style={labelStyle}>Species (if known)</label>
                 <select
@@ -691,6 +692,7 @@ function ReportingForm() {
             </div>
 
             <div>
+              <div className="nq-sec"><span className="nq-sec-num" aria-hidden="true">2</span>Where &amp; photos</div>
               <div style={fieldGroup}>
                 <label style={labelStyle}>Nest location</label>
                 {locating && <p style={{ fontSize: 13, color: BRAND.textMuted }}>Getting your location...</p>}
@@ -715,6 +717,9 @@ function ReportingForm() {
                         Selected: {position[0].toFixed(5)}, {position[1].toFixed(5)}
                       </p>
                     )}
+                    <p style={{ fontSize: 12, color: BRAND.textMuted, margin: '4px 0 0' }}>
+                      <i className="ti ti-lock" aria-hidden="true"></i> Only an approximate area is ever shown publicly.
+                    </p>
                   </>
                 )}
               </div>
@@ -725,7 +730,19 @@ function ReportingForm() {
                   Add up to {MAX_PHOTOS} photos, 8MB each. {photos.length} of {MAX_PHOTOS} added.
                 </p>
 
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div
+                  className={`nq-drop${dragging ? ' nq-drop-active' : ''}`}
+                  onDragOver={(e) => { e.preventDefault(); if (!photosFull) setDragging(true) }}
+                  onDragLeave={() => setDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    setDragging(false)
+                    if (!photosFull) handlePhotosSelected({ target: { files: e.dataTransfer.files, value: '' } })
+                  }}
+                >
+                  <i className="ti ti-cloud-upload nq-drop-icon" aria-hidden="true"></i>
+                  {!IS_TOUCH_DEVICE && <p className="nq-drop-text">Drag photos here, or</p>}
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
                   {IS_TOUCH_DEVICE && (
                     <button
                       type="button"
@@ -746,6 +763,7 @@ function ReportingForm() {
                     <i className="ti ti-photo-plus" style={{ fontSize: 16 }} aria-hidden="true"></i>
                     {IS_TOUCH_DEVICE ? 'Choose from library' : 'Choose photos'}
                   </button>
+                </div>
                 </div>
 
                 <input
@@ -847,21 +865,20 @@ function ReportingForm() {
           <button
             type="submit"
             disabled={locating}
-            className="nq-button"
+            className="nq-btn nq-btn-primary"
             style={{
               background: locating ? '#6E8A5E' : BRAND.accent,
               color: '#0F2818',
               border: 'none',
-              fontSize: 14,
-              fontWeight: 500,
-              padding: '12px 28px',
-              borderRadius: 8,
+              padding: '14px 28px',
+              borderRadius: 999,
               cursor: locating ? 'default' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 8,
-              letterSpacing: '0.01em',
+              width: 'fit-content',
+              marginLeft: 'auto',
             }}
           >
             <i className="ti ti-eye" style={{ fontSize: 16 }} aria-hidden="true"></i>

@@ -18,7 +18,7 @@ const MOCK_REPORTS = [
 const BRAND = {
   accent: '#93BB4A',
   text: '#F5EFD9',
-  textMuted: '#8A9483',
+  textMuted: '#A3AD9B',
   card: '#173722',
   border: '#234A2E',
 }
@@ -81,7 +81,7 @@ function createSpeciesIcon(speciesName) {
           background: ${color};
           border: 3px solid white;
           border-radius: 50%;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.45);
+          box-shadow: 0 0 0 4px ${color}55, 0 3px 10px rgba(0,0,0,0.5);
         "
       ></div>
     `,
@@ -119,6 +119,34 @@ function FitToMarkers({ positions }) {
   }, [map, positions])
 
   return null
+}
+
+// Floating button that re-centres the map on all plotted nests
+function ResetViewButton({ positions }) {
+  const map = useMap()
+  if (positions.length === 0) return null
+
+  function reset() {
+    if (positions.length === 1) {
+      map.setView(positions[0], 13)
+    } else {
+      map.fitBounds(L.latLngBounds(positions), { padding: [40, 40], maxZoom: 14 })
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      className="nq-map-reset"
+      onClick={reset}
+      onDoubleClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      aria-label="Reset map view to show all nests"
+    >
+      <i className="ti ti-focus-2" aria-hidden="true" />
+      Reset view
+    </button>
+  )
 }
 
 function PublicMap() {
@@ -353,6 +381,8 @@ function PublicMap() {
         </div>
       )}
 
+      <div className="nq-map">
+        {loading && <div className="nq-map-skeleton" aria-hidden="true" />}
       <MapContainer
         center={[-36.8523, 174.7642]}
         zoom={12}
@@ -360,9 +390,9 @@ function PublicMap() {
           height: 'min(560px, 65vh)',
           minHeight: 340,
           width: '100%',
-          borderRadius: 12,
+          borderRadius: 16,
           border: `1px solid ${BRAND.border}`,
-          boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
         }}
       >
         <TileLayer
@@ -371,6 +401,7 @@ function PublicMap() {
         />
 
         <FitToMarkers positions={positions} />
+        <ResetViewButton positions={positions} />
 
         {plottableReports.map((r) => (
           <Marker
@@ -386,6 +417,7 @@ function PublicMap() {
           </Marker>
         ))}
       </MapContainer>
+      </div>
     </div>
   )
 }

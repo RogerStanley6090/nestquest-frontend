@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, NavLink, Link, useNavigate } from 'react-router-dom'
+import { Routes, Route, NavLink, Link, useNavigate, useLocation } from 'react-router-dom'
 import Home from './Home.jsx'
 import IdentificationGuide from './IdentificationGuide.jsx'
 import ReportingForm from './ReportingForm.jsx'
@@ -10,14 +10,16 @@ import Dashboard from './Dashboard.jsx'
 import ReportDetail from './ReportDetail.jsx'
 import ProtectedRoute from './ProtectedRoute.jsx'
 import NotFound from './NotFound.jsx'
-import nestquestLogo from './assets/nestquest-logo.png'
+import About from './About.jsx'
+import { useScrollReveal } from './hooks.js'
+import nestquestIcon from './assets/nestquest-icon.png'
 import './App.css'
 
 const BRAND = {
   header: '#0F2818',
   accent: '#93BB4A',
   text: '#F5EFD9',
-  textMuted: '#8A9483',
+  textMuted: '#A3AD9B',
 }
 
 const FOOTER_TEXT = '#B7C0AC'
@@ -63,15 +65,30 @@ const RESPONSIVE_CSS = `
       padding: 16px 0 8px;
     }
     .nq-nav.nq-nav-open { display: flex !important; }
+    .nq-nav a:not(.nq-dash) { font-size: 13px; padding: 6px 0; }
+    .nq-nav .nq-dash { width: 100%; justify-content: center; }
   }
 `
 
+// Browser tab title for each page
+const PAGE_TITLES = {
+  '/': "NestQuest | Help protect New Zealand's birds",
+  '/guide': 'Identification guide | NestQuest',
+  '/report': 'Report a nest | NestQuest',
+  '/confirmation': 'Report submitted | NestQuest',
+  '/map': 'Nest map | NestQuest',
+  '/login': 'Researcher login | NestQuest',
+  '/about': 'About & privacy | NestQuest',
+  '/dashboard': 'Researcher dashboard | NestQuest',
+}
+
 const footerHeading = {
+  fontFamily: "'DM Sans', sans-serif",
   fontSize: 12,
   color: BRAND.accent,
   textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  fontWeight: 600,
+  letterSpacing: '0.14em',
+  fontWeight: 700,
   margin: '0 0 12px',
 }
 
@@ -85,6 +102,16 @@ function App() {
   const navigate = useNavigate()
   const isLoggedIn = Boolean(localStorage.getItem('nq_auth_token'))
   const [menuOpen, setMenuOpen] = useState(false)
+  const { pathname } = useLocation()
+
+  // Per-page tab title (NotFound sets its own) and scroll-to-top on navigation
+  useEffect(() => {
+    const title = PAGE_TITLES[pathname] || (pathname.startsWith('/dashboard/report/') ? 'Report detail | NestQuest' : null)
+    if (title) document.title = title
+    window.scrollTo(0, 0)
+  }, [pathname])
+
+  useScrollReveal(pathname)
 
   // Pressing Escape closes the phone menu
   useEffect(() => {
@@ -104,13 +131,7 @@ function App() {
   function navLinkStyle({ isActive }) {
     return {
       color: isActive ? BRAND.accent : BRAND.textMuted,
-      textDecoration: 'none',
-      fontSize: 16,
-      letterSpacing: '0.01em',
-      fontWeight: isActive ? 600 : 400,
-      borderBottom: isActive ? `2px solid ${BRAND.accent}` : '2px solid transparent',
-      paddingBottom: 4,
-      transition: 'color 0.15s ease, border-color 0.15s ease',
+      transition: 'color 0.15s ease',
     }
   }
 
@@ -122,8 +143,11 @@ function App() {
         className="nq-header"
         style={{ background: BRAND.header, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(147,187,74,0.15)' }}
       >
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-          <img src={nestquestLogo} alt="NestQuest" className="nq-logo" style={{ display: 'block' }} />
+        <Link to="/" className="nq-brand" aria-label="NestQuest home">
+          <img src={nestquestIcon} alt="" className="nq-brand-icon" width="40" height="41" />
+          <span className="nq-brand-text">
+            Nest<span>Quest</span>
+          </span>
         </Link>
         <button
           type="button"
@@ -143,6 +167,7 @@ function App() {
         </button>
         <nav
           id="nq-main-nav"
+          aria-label="Main navigation"
           className={`nq-nav${menuOpen ? ' nq-nav-open' : ''}`}
           style={{ display: 'flex', alignItems: 'center' }}
           onClick={() => setMenuOpen(false)}
@@ -154,7 +179,8 @@ function App() {
           {isLoggedIn ? (
             <button
               onClick={handleLogout}
-              style={{ background: 'none', border: 'none', color: BRAND.textMuted, fontSize: 14, cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
+              className="nq-link-muted"
+              style={{ background: 'none', border: 'none', color: BRAND.textMuted, cursor: 'pointer', padding: 0 }}
             >
               Logout
             </button>
@@ -163,24 +189,23 @@ function App() {
           )}
           <NavLink
             to="/dashboard"
+            className="nq-dash"
             style={({ isActive }) => ({
               color: isActive ? BRAND.header : BRAND.accent,
               background: isActive ? BRAND.accent : 'transparent',
-              textDecoration: 'none',
-              fontSize: 14,
-              fontWeight: 500,
               border: `1px solid ${BRAND.accent}`,
-              padding: '6px 16px',
-              borderRadius: 6,
-              transition: 'background 0.15s ease, color 0.15s ease',
+              padding: '10px 20px',
+              borderRadius: 999,
             })}
           >
             Dashboard
+            <i className="ti ti-arrow-up-right" aria-hidden="true" />
           </NavLink>
         </nav>
       </header>
 
       <main id="main-content" tabIndex={-1} className="nq-main" style={{ flex: 1, width: '100%', maxWidth: 1200, margin: '0 auto' }}>
+        <div key={pathname} className="nq-page">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/guide" element={<IdentificationGuide />} />
@@ -204,8 +229,10 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
+        </div>
       </main>
 
       <footer
@@ -238,9 +265,10 @@ function App() {
           <div>
             <p style={footerHeading}>Explore</p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <Link to="/guide" style={footerLink}>Identification guide</Link>
-              <Link to="/report" style={footerLink}>Report a nest</Link>
-              <Link to="/map" style={footerLink}>Nest map</Link>
+              <Link to="/guide" className="nq-footer-link" style={footerLink}>Identification guide</Link>
+              <Link to="/report" className="nq-footer-link" style={footerLink}>Report a nest</Link>
+              <Link to="/map" className="nq-footer-link" style={footerLink}>Nest map</Link>
+              <Link to="/about" className="nq-footer-link" style={footerLink}>About &amp; privacy</Link>
             </div>
           </div>
 
