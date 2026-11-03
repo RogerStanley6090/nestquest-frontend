@@ -3,20 +3,25 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { researcherApi, publicApi } from './api/client.js'
+import './reportdetail.css'
 
 const BRAND = {
-  card: '#173722',
-  border: '#234A2E',
-  text: '#F5EFD9',
-  textMuted: '#8A9483',
   accent: '#93BB4A',
 }
 
 const STATUS_META = {
-  unverified: { label: 'Unverified', bg: '#E5A83A', text: '#3D2A05' },
-  verified: { label: 'Verified', bg: '#93BB4A', text: '#1B2E08' },
-  rejected: { label: 'Rejected', bg: '#9A9A92', text: '#232320' },
-  needs_info: { label: 'Needs info', bg: '#E4685A', text: '#3D0F0A' },
+  unverified: { label: 'Unverified', bg: '#E5A83A', text: '#3D2A05', icon: 'ti-clock' },
+  verified: { label: 'Verified', bg: '#93BB4A', text: '#1B2E08', icon: 'ti-check' },
+  rejected: { label: 'Rejected', bg: '#9A9A92', text: '#232320', icon: 'ti-x' },
+  needs_info: { label: 'Needs info', bg: '#E4685A', text: '#3D0F0A', icon: 'ti-help' },
+}
+
+// "2026-10-14" -> "14 Oct 2026". Falls back to the raw text if it isn't a date.
+function formatDate(value) {
+  if (!value || value === '—') return '—'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return value
+  return d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function ReportDetail() {
@@ -34,6 +39,8 @@ function ReportDetail() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [viewerOpen, setViewerOpen] = useState(false)
 
   useEffect(() => {
     researcherApi.getReport(id)
@@ -65,6 +72,28 @@ function ReportDetail() {
       })
   }, [id])
 
+  // Only photos whose link could be generated can be shown.
+  const photoItems = photos.filter((p) => p.photo_url)
+  const activeIndex = Math.min(activePhoto, Math.max(photoItems.length - 1, 0))
+  const activePhotoUrl = photoItems[activeIndex]?.photo_url || null
+
+  // Keyboard controls for the photo viewer and the delete dialog
+  useEffect(() => {
+    if (!viewerOpen && !confirmingDelete) return
+    function onKeyDown(e) {
+      if (e.key === 'Escape') {
+        setViewerOpen(false)
+        setConfirmingDelete(false)
+      } else if (viewerOpen && e.key === 'ArrowRight') {
+        setActivePhoto((i) => Math.min(i + 1, photoItems.length - 1))
+      } else if (viewerOpen && e.key === 'ArrowLeft') {
+        setActivePhoto((i) => Math.max(i - 1, 0))
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [viewerOpen, confirmingDelete, photoItems.length])
+
   async function handleSave() {
     setSaving(true)
     setError(null)
@@ -81,11 +110,9 @@ function ReportDetail() {
       setSaving(false)
     }
   }
+
   async function handleDelete() {
-    const confirmed = window.confirm(
-        'Are you sure you want to permanently delete this report? This action cannot be undone.'
-    )
-    if (!confirmed) return
+    setConfirmingDelete(false)
     setDeleting(true)
     setError(null)
     try {
@@ -98,6 +125,7 @@ function ReportDetail() {
       setDeleting(false)
     }
   }
+
   async function handleExportPdf() {
     try {
       setError(null)
@@ -116,122 +144,127 @@ function ReportDetail() {
     }
   }
 
-  if (loading) return <p>Loading report...</p>
+  if (loading) {
+    return (
+      <div style={{ padding: '16px 0' }} role="status" aria-label="Loading report">
+        <div className="nq-rd-skel" style={{ height: 38, width: 180, marginBottom: 22 }} />
+        <div className="nq-rd-skel" style={{ height: 48, width: 280, marginBottom: 22 }} />
+        <div className="nq-rd-skel" style={{ height: 420 }} />
+      </div>
+    )
+  }
 
   const loc = report?.location
   const exactLat = loc?.exact_latitude ?? loc?.masked_latitude ?? -36.8523
   const exactLng = loc?.exact_longitude ?? loc?.masked_longitude ?? 174.7642
   const species = report?.species || 'Unknown'
-  const submittedDate = report?.created_at || report?.date || '—'
+  const submittedDate = formatDate(report?.created_at || report?.date || '—')
   const contactEmail = report?.contact_email || '—'
   const statusMeta = STATUS_META[status] || STATUS_META.unverified
 
-  // Only photos whose link could be generated can be shown.
-  const photoItems = photos.filter((p) => p.photo_url)
-  const activeIndex = Math.min(activePhoto, Math.max(photoItems.length - 1, 0))
-  const activePhotoUrl = photoItems[activeIndex]?.photo_url || null
-
-  const labelStyle = { fontSize: 12, color: BRAND.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }
-  const fieldStyle = { width: '100%', background: '#0F2818', border: `1px solid ${BRAND.border}`, color: BRAND.text, borderRadius: 8, padding: 10, fontSize: 13 }
-
   return (
-    <div>
-      <Link to="/dashboard" className="nq-link" style={{ fontSize: 13, color: BRAND.accent, display: 'flex', alignItems: 'center', gap: 6, marginBottom: 20, width: 'fit-content' }}>
+    <div style={{ padding: '16px 0' }}>
+      <Link to="/dashboard" className="nq-rd-back">
         <i className="ti ti-arrow-left" style={{ fontSize: 14 }} aria-hidden="true"></i>
         Back to submissions
       </Link>
 
       {loadError && (
-        <p style={{ color: BRAND.textMuted, fontSize: 12, marginBottom: 12 }}>
-          Could not load live report data ({loadError}) — showing placeholder values below.
+        <p className="nq-rd-note" role="alert">
+          Could not load live report data ({loadError}). Showing placeholder values below.
         </p>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 10 }}>
-        <h1 style={{ color: BRAND.accent, fontSize: 26, margin: 0 }}>Report #{id}</h1>
-        <span style={{ background: statusMeta.bg, color: statusMeta.text, fontSize: 12, padding: '4px 14px', borderRadius: 20, fontWeight: 500 }}>
+      <div className="nq-rd-head">
+        <div>
+          <p className="nq-eyebrow">Researcher review</p>
+          <h1 style={{ color: '#F5EFD9', fontSize: 'clamp(28px, 4vw, 38px)', margin: 0 }}>Report #{id}</h1>
+        </div>
+        <span className="nq-rd-badge" style={{ background: statusMeta.bg, color: statusMeta.text }}>
+          <i className={`ti ${statusMeta.icon}`} aria-hidden="true"></i>
           {statusMeta.label}
         </span>
       </div>
 
-      <div style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 12, padding: 28, boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
+      <div className="nq-rd-card">
         <div className="nq-two-col">
           <div>
-            <p style={labelStyle}>
+            <span className="nq-rd-label">
               {photoItems.length > 1 ? `Photos (${photoItems.length})` : 'Photo'}
-            </p>
+            </span>
             {activePhotoUrl ? (
               <>
-                <img
-                  src={activePhotoUrl}
-                  alt={`Submitted nest, photo ${activeIndex + 1} of ${photoItems.length}`}
-                  style={{ width: '100%', height: 200, objectFit: 'contain', background: '#0F2818', borderRadius: 10, marginBottom: 10 }}
-                />
+                <button
+                  type="button"
+                  className="nq-rd-hero"
+                  onClick={() => setViewerOpen(true)}
+                  aria-label="View photo full screen"
+                >
+                  <img
+                    src={activePhotoUrl}
+                    alt={`Submitted nest, photo ${activeIndex + 1} of ${photoItems.length}`}
+                  />
+                  <span className="nq-rd-zoom" aria-hidden="true">
+                    <i className="ti ti-arrows-maximize"></i> Full screen
+                  </span>
+                </button>
 
                 {photoItems.length > 1 && (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+                  <div className="nq-rd-thumbs">
                     {photoItems.map((p, index) => (
                       <button
                         key={p.id}
                         type="button"
+                        className="nq-rd-thumb"
                         onClick={() => setActivePhoto(index)}
                         aria-label={`Show photo ${index + 1} of ${photoItems.length}`}
                         aria-current={index === activeIndex}
-                        style={{
-                          padding: 0,
-                          width: 56,
-                          height: 56,
-                          borderRadius: 8,
-                          overflow: 'hidden',
-                          background: '#0F2818',
-                          border: `2px solid ${index === activeIndex ? BRAND.accent : BRAND.border}`,
-                          cursor: 'pointer',
-                        }}
                       >
-                        <img src={p.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        <img src={p.photo_url} alt="" />
                       </button>
                     ))}
                   </div>
                 )}
-
-                <a
-                  href={activePhotoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="nq-link"
-                  style={{ fontSize: 12, color: BRAND.accent, display: 'inline-flex', alignItems: 'center', gap: 4, marginBottom: 18 }}
-                >
-                  <i className="ti ti-external-link" style={{ fontSize: 13 }} aria-hidden="true"></i>
-                  Open full size
-                </a>
               </>
             ) : (
-              <div style={{ background: '#0F2818', border: `1px solid ${BRAND.border}`, borderRadius: 10, height: 170, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
-                <i className="ti ti-photo" style={{ fontSize: 32, color: '#4D6B48' }} aria-hidden="true"></i>
+              <div className="nq-rd-empty">
+                <i className="ti ti-photo-off" aria-hidden="true"></i>
+                No photos for this report
               </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 20 }}>
-              <p style={{ fontSize: 13, margin: 0 }}><span style={{ color: BRAND.textMuted }}>Submitted</span> &middot; {submittedDate}</p>
-              <p style={{ fontSize: 13, margin: 0 }}><span style={{ color: BRAND.textMuted }}>Suggested species</span> &middot; {report?.species_name || species}</p>
-              <p style={{ fontSize: 13, margin: 0 }}><span style={{ color: BRAND.textMuted }}>Contact</span> &middot; {contactEmail}</p>
-            </div>
+            <ul className="nq-rd-facts">
+              <li>
+                <i className="ti ti-calendar" aria-hidden="true"></i>
+                <span><small>Submitted</small>{submittedDate}</span>
+              </li>
+              <li>
+                <i className="ti ti-feather" aria-hidden="true"></i>
+                <span><small>Suggested species</small>{report?.species_name || species}</span>
+              </li>
+              <li>
+                <i className="ti ti-mail" aria-hidden="true"></i>
+                <span><small>Contact</small>{contactEmail}</span>
+              </li>
+            </ul>
 
-            <p style={labelStyle}>Notes</p>
+            <label className="nq-rd-label" htmlFor="rd-notes">Notes</label>
             <textarea
+              id="rd-notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Add a note"
-              style={{ ...fieldStyle, minHeight: 70 }}
+              className="nq-rd-field"
+              style={{ minHeight: 96 }}
             />
           </div>
 
           <div>
-            <p style={labelStyle}>
-              Exact nest location <span style={{ color: '#E4685A', textTransform: 'none' }}>&middot; researcher only</span>
-            </p>
-            <div style={{ borderRadius: 10, overflow: 'hidden', marginBottom: 10, border: `1px solid ${BRAND.border}` }}>
-              <MapContainer center={[exactLat, exactLng]} zoom={15} style={{ height: 170, width: '100%' }}>
+            <span className="nq-rd-label">
+              Exact nest location <em>&middot; researcher only</em>
+            </span>
+            <div className="nq-rd-map nq-map">
+              <MapContainer center={[exactLat, exactLng]} zoom={15} style={{ height: 220, width: '100%' }}>
                 <TileLayer
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   attribution='&copy; OpenStreetMap contributors'
@@ -241,15 +274,17 @@ function ReportDetail() {
                 </Marker>
               </MapContainer>
             </div>
-            <p style={{ fontSize: 12, color: BRAND.textMuted, margin: '0 0 20px' }}>
+            <p className="nq-rd-coords">
               {Number(exactLat).toFixed(6)}, {Number(exactLng).toFixed(6)}
             </p>
 
-            <p style={labelStyle}>Final species</p>
+            <label className="nq-rd-label" htmlFor="rd-species">Final species</label>
             <select
+              id="rd-species"
               value={finalSpecies}
               onChange={(e) => setFinalSpecies(e.target.value)}
-              style={{ ...fieldStyle, marginBottom: 18 }}
+              className="nq-rd-field"
+              style={{ marginBottom: 20 }}
             >
               <option value="">Select species</option>
               {speciesList.map((s) => (
@@ -259,11 +294,13 @@ function ReportDetail() {
               ))}
             </select>
 
-            <p style={labelStyle}>Verification status</p>
+            <label className="nq-rd-label" htmlFor="rd-status">Verification status</label>
             <select
+              id="rd-status"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              style={{ ...fieldStyle, marginBottom: 18 }}
+              className="nq-rd-field"
+              style={{ marginBottom: 22 }}
             >
               <option value="unverified">Unverified</option>
               <option value="verified">Verified</option>
@@ -271,65 +308,143 @@ function ReportDetail() {
               <option value="rejected">Rejected</option>
             </select>
 
-            {error && <p style={{ color: '#E4685A', fontSize: 13, marginBottom: 10 }}>{error}</p>}
+            {error && <p className="nq-rd-error" role="alert">{error}</p>}
 
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="nq-button"
-              style={{
-                background: saving ? '#6E8A5E' : BRAND.accent,
-                color: '#0F2818',
-                border: 'none',
-                fontSize: 14,
-                fontWeight: 500,
-                padding: '12px 20px',
-                width: '100%',
-                borderRadius: 8,
-                cursor: saving ? 'default' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                letterSpacing: '0.01em',
-              }}
-            >
-              {saving ? (
-                <>
-                  <i className="ti ti-loader-2" style={{ fontSize: 16 }} aria-hidden="true"></i>
-                  Saving
-                </>
-              ) : (
-                <>
-                  <i className="ti ti-check" style={{ fontSize: 16 }} aria-hidden="true"></i>
-                  Save changes
-                </>
-              )}
-            </button>
-            <button
-                type="button" onClick={handleExportPdf} className="nq-button"
-                style={{ background: 'transparent', color: BRAND.accent, border: `1px solid ${BRAND.accent}`, fontSize: 14, fontWeight: 500, padding: '12px 20px', width: '100%', borderRadius: 8, cursor: 'pointer', marginTop: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,}}>
-              <i className="ti ti-file-type-pdf" style={{ fontSize: 16 }} aria-hidden="true"/>
-              Export PDF
-            </button>
-            <button
-                type="button" onClick={handleDelete} disabled={deleting} className="nq-button"
-                style={{background: 'transparent', color: '#E4685A', border: '1px solid #E4685A', fontSize: 14, fontWeight: 500, padding: '12px 20px', width: '100%', borderRadius: 8, cursor: deleting ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10,}}>
-              {deleting ? (
+            <div className="nq-rd-actions">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="nq-btn nq-btn-primary"
+                style={{ background: saving ? '#6E8A5E' : BRAND.accent, color: '#0F2818', border: 'none' }}
+              >
+                {saving ? (
+                  <>
+                    <i className="ti ti-loader-2" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                    Saving
+                  </>
+                ) : (
+                  <>
+                    <i className="ti ti-check" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                    Save changes
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExportPdf}
+                className="nq-btn nq-btn-secondary"
+                style={{ color: '#F5EFD9', border: '1px solid #234A2E' }}
+              >
+                <i className="ti ti-file-type-pdf" style={{ fontSize: 16 }} aria-hidden="true"></i>
+                Export PDF
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(true)}
+                disabled={deleting}
+                className="nq-btn nq-rd-danger"
+              >
+                {deleting ? (
                   <>
                     <i className="ti ti-loader-2" style={{ fontSize: 16 }} aria-hidden="true"></i>
                     Deleting
                   </>
-              ) : (
+                ) : (
                   <>
                     <i className="ti ti-trash" style={{ fontSize: 16 }} aria-hidden="true"></i>
-                    Delete Report
+                    Delete report
                   </>
-              )}
-            </button>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Full-screen photo viewer */}
+      {viewerOpen && activePhotoUrl && (
+        <div className="nq-rd-overlay" role="dialog" aria-modal="true" aria-label="Photo viewer" onClick={() => setViewerOpen(false)}>
+          <img
+            src={activePhotoUrl}
+            alt={`Submitted nest, photo ${activeIndex + 1} of ${photoItems.length}`}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            type="button"
+            className="nq-rd-iconbtn"
+            style={{ top: 18, right: 18 }}
+            onClick={() => setViewerOpen(false)}
+            aria-label="Close photo viewer"
+          >
+            <i className="ti ti-x" aria-hidden="true"></i>
+          </button>
+          {photoItems.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="nq-rd-iconbtn"
+                style={{ left: 18, top: '50%', transform: 'translateY(-50%)' }}
+                onClick={(e) => { e.stopPropagation(); setActivePhoto(Math.max(activeIndex - 1, 0)) }}
+                disabled={activeIndex === 0}
+                aria-label="Previous photo"
+              >
+                <i className="ti ti-chevron-left" aria-hidden="true"></i>
+              </button>
+              <button
+                type="button"
+                className="nq-rd-iconbtn"
+                style={{ right: 18, top: '50%', transform: 'translateY(-50%)' }}
+                onClick={(e) => { e.stopPropagation(); setActivePhoto(Math.min(activeIndex + 1, photoItems.length - 1)) }}
+                disabled={activeIndex === photoItems.length - 1}
+                aria-label="Next photo"
+              >
+                <i className="ti ti-chevron-right" aria-hidden="true"></i>
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Delete confirmation */}
+      {confirmingDelete && (
+        <div className="nq-rd-overlay" onClick={() => setConfirmingDelete(false)}>
+          <div
+            className="nq-rd-dialog"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="rd-del-title"
+            aria-describedby="rd-del-text"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="rd-del-title">Delete report #{id}?</h2>
+            <p id="rd-del-text">
+              This permanently deletes the report. This action cannot be undone.
+            </p>
+            <div className="nq-rd-dialog-actions">
+              <button
+                type="button"
+                className="nq-btn nq-btn-secondary"
+                style={{ color: '#F5EFD9', border: '1px solid #234A2E', padding: '12px 22px', borderRadius: 999 }}
+                onClick={() => setConfirmingDelete(false)}
+                autoFocus
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="nq-btn nq-rd-danger"
+                style={{ padding: '12px 22px', borderRadius: 999 }}
+                onClick={handleDelete}
+              >
+                Delete permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
