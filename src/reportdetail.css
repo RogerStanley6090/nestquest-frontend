@@ -1,0 +1,44 @@
+.nq-rd-back { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--nq-accent); text-decoration: none; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--nq-border); background: var(--nq-card); margin-bottom: 22px; }
+.nq-rd-back:hover { border-color: var(--nq-accent); }
+.nq-rd-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+.nq-rd-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; padding: 7px 16px 7px 12px; border-radius: 999px; }
+.nq-rd-card { border-radius: 18px; border: 1px solid var(--nq-border); padding: clamp(18px, 3vw, 30px); background: linear-gradient(160deg, rgba(34,78,48,.95), rgba(18,45,28,.95)); box-shadow: inset 0 1px 0 rgba(255,255,255,.09), 0 10px 30px rgba(0,0,0,.25); }
+.nq-rd-label { font-family: var(--font-ui); font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--nq-muted); margin: 0 0 10px; display: block; }
+.nq-rd-label em { font-style: normal; color: #F08A7E; letter-spacing: .08em; }
+.nq-rd-hero { position: relative; display: block; width: 100%; padding: 0; border: 1px solid var(--nq-border); border-radius: 14px; overflow: hidden; background: #0F2818; aspect-ratio: 4 / 3; cursor: zoom-in; }
+.nq-rd-hero img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .5s ease; }
+.nq-rd-hero:hover img { transform: scale(1.03); }
+.nq-rd-zoom { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--nq-text); background: rgba(15,40,24,.82); padding: 6px 12px; border-radius: 999px; }
+.nq-rd-empty { aspect-ratio: 4 / 3; border: 1px dashed #3B6A49; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--nq-muted); font-size: 13px; background: rgba(15,40,24,.5); }
+.nq-rd-empty i { font-size: 34px; color: var(--nq-accent); opacity: .7; }
+.nq-rd-thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 0; }
+.nq-rd-thumb { padding: 0; width: 62px; height: 62px; border-radius: 10px; overflow: hidden; background: #0F2818; border: 2px solid var(--nq-border); cursor: pointer; transition: border-color .2s, transform .2s; }
+.nq-rd-thumb:hover { transform: translateY(-2px); }
+.nq-rd-thumb[aria-current="true"] { border-color: var(--nq-accent); }
+.nq-rd-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nq-rd-facts { list-style: none; margin: 22px 0; padding: 0; display: grid; gap: 10px; }
+.nq-rd-facts li { display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 12px; background: rgba(15,40,24,.55); border: 1px solid rgba(35,74,46,.8); font-size: 14px; color: var(--nq-text); }
+.nq-rd-facts i { font-size: 18px; color: var(--nq-accent); flex: none; }
+.nq-rd-facts small { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--nq-muted); font-weight: 600; }
+.nq-rd-field { width: 100%; background: #0F2818; border: 1px solid var(--nq-border); color: var(--nq-text); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+select.nq-rd-field { appearance: none; -webkit-appearance: none; padding-right: 40px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2393BB4A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
+.nq-rd-map { border-radius: 14px; overflow: hidden; border: 1px solid var(--nq-border); margin-bottom: 8px; }
+.nq-rd-coords { font-size: 12.5px; color: var(--nq-muted); margin: 0 0 22px; font-variant-numeric: tabular-nums; }
+.nq-rd-actions { display: grid; gap: 10px; margin-top: 6px; }
+.nq-rd-actions .nq-btn { width: 100%; justify-content: center; display: flex; align-items: center; gap: 8px; padding: 14px 20px; border-radius: 999px; }
+.nq-rd-danger { background: transparent !important; color: #F08A7E !important; border: 1px solid rgba(240,138,126,.6) !important; }
+.nq-rd-danger:hover:not(:disabled) { background: rgba(228,104,90,.14) !important; border-color: #F08A7E !important; }
+.nq-rd-error { background: rgba(228,104,90,.12); border: 1px solid rgba(228,104,90,.4); color: #F08A7E; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; margin: 0 0 12px; }
+.nq-rd-note { background: var(--nq-card); border: 1px solid var(--nq-border); border-radius: 12px; padding: 12px 16px; font-size: 13.5px; color: var(--nq-muted); margin: 0 0 20px; }
+.nq-rd-skel { border-radius: 14px; background: linear-gradient(100deg, #12301e 30%, #1d4a2d 50%, #12301e 70%); background-size: 250% 100%; animation: nq-skeleton 1.4s linear infinite; }
+
+/* Full-screen photo viewer and delete dialog */
+.nq-rd-overlay { position: fixed; inset: 0; z-index: 2000; background: rgba(5,16,9,.92); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.nq-rd-overlay img { max-width: 100%; max-height: 100%; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.6); }
+.nq-rd-iconbtn { position: absolute; width: 46px; height: 46px; border-radius: 50%; border: 1px solid var(--nq-border); background: rgba(23,55,34,.95); color: var(--nq-text); display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; }
+.nq-rd-iconbtn:hover { border-color: var(--nq-accent); color: var(--nq-accent); }
+.nq-rd-dialog { background: linear-gradient(160deg, #224E30, #173722); border: 1px solid var(--nq-border); border-radius: 18px; padding: 28px; max-width: 440px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,.55); }
+.nq-rd-dialog h2 { font-size: 22px; margin: 0 0 10px; color: var(--nq-text); }
+.nq-rd-dialog p { color: var(--nq-muted); font-size: 14.5px; line-height: 1.6; margin: 0 0 22px; }
+.nq-rd-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+@media (prefers-reduced-motion: reduce) { .nq-rd-hero img, .nq-rd-thumb, .nq-rd-skel { transition: none; animation: none; } .nq-rd-hero:hover img, .nq-rd-thumb:hover { transform: none; } }
