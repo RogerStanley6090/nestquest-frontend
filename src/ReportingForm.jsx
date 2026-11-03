@@ -703,7 +703,7 @@ function ReportingForm() {
                         ? 'Using your device location. Click the map to adjust if needed.'
                         : 'Click on the map to set the nest location.'}
                     </p>
-                    <div style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${BRAND.border}` }}>
+                    <div className="nq-map" style={{ borderRadius: 10, overflow: 'hidden', border: `1px solid ${BRAND.border}` }}>
                       <MapContainer center={position || DEFAULT_CENTER} zoom={15} style={{ height: 220, width: '100%' }}>
                         <TileLayer
                           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
