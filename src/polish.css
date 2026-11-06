@@ -107,3 +107,18 @@
 [style*="color: rgb(163, 173, 155)"] { color: #C3CBB9 !important; }   /* was #A3AD9B */
 [style*="color: rgb(183, 192, 172)"] { color: #D0D8C6 !important; }   /* was #B7C0AC */
 .nq-eyebrow { color: #A9CE5E; }
+
+/* ---------- iPhone fix: date field ----------
+   iPhone browsers draw date inputs their own way: too wide, text centred.
+   This makes the date field match the other fields. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 48px;
+  text-align: left;
+}
+input[type="date"]::-webkit-date-and-time-value { text-align: left; }
+input[type="date"]::-webkit-datetime-edit { padding: 0; }
