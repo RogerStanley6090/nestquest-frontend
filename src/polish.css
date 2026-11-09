@@ -197,7 +197,7 @@ a[role="button"] {
 @keyframes nq-tick-pop { from { transform: scale(0); } to { transform: scale(1); } }
 
 /* ---- Reporting form: two cards + action bar ---- */
-.nq-rform { align-items: start; gap: 20px; }
+.nq-rform { align-items: stretch; gap: 20px; }
 .nq-rcard {
   border: 1px solid var(--nq-border);
   border-radius: 16px;
