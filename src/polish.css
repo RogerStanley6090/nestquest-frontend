@@ -122,3 +122,76 @@ input[type="date"] {
 }
 input[type="date"]::-webkit-date-and-time-value { text-align: left; }
 input[type="date"]::-webkit-datetime-edit { padding: 0; }
+
+/* =====================================================================
+   v7 additions: friendly states, button press, form feedback
+   ===================================================================== */
+
+/* ---- Empty / error states ---- */
+.nq-state {
+  text-align: center;
+  padding: 34px 20px;
+  margin: 0 0 16px;
+  border: 1px dashed var(--nq-border);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.nq-state-error { border-style: solid; border-color: #E8A33D; background: rgba(232, 163, 61, 0.08); }
+.nq-state-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(147, 187, 74, 0.14); color: var(--nq-accent);
+  font-size: 26px; margin-bottom: 12px;
+}
+.nq-state-error .nq-state-icon { background: rgba(232, 163, 61, 0.18); color: #E8A33D; }
+.nq-state-title { margin: 0 0 6px; font-size: 18px; color: var(--nq-text); }
+.nq-state-text { margin: 0 auto 16px; max-width: 420px; font-size: 14px; line-height: 1.5; color: var(--nq-muted); }
+.nq-state-btn {
+  padding: 9px 20px; border-radius: 999px; cursor: pointer; font-size: 14px; font-weight: 600;
+  border: 1px solid var(--nq-accent); background: transparent; color: var(--nq-accent);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+}
+.nq-state-btn:hover { background: var(--nq-accent); color: #0F2818; }
+
+/* ---- Dashboard stat-card skeleton ---- */
+.nq-dstat-skel { pointer-events: none; }
+.nq-dstat-skel .nq-dstat-num {
+  display: inline-block; width: 44px; height: 30px; border-radius: 8px; color: transparent;
+  background: linear-gradient(90deg, rgba(255,255,255,0.06) 25%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.06) 75%);
+  background-size: 200% 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nq-dstat-skel .nq-dstat-num { animation: nq-skeleton 1.4s linear infinite; }
+}
+
+/* ---- Button press feedback (all buttons + button-like links) ---- */
+button:not(:disabled),
+.nq-btn-primary,
+.nq-btn-ghost,
+a[role="button"] {
+  transition: transform 0.12s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active,
+  a[role="button"]:active,
+  .nq-btn-ghost:active { transform: scale(0.97); }
+}
+
+/* ---- Reporting form: step indicator ---- */
+.nq-steps { display: flex; align-items: center; gap: 10px; margin: 0 0 22px; }
+.nq-progress-bar { flex: 1; height: 6px; border-radius: 999px; background: var(--nq-border); overflow: hidden; }
+.nq-progress-fill { height: 100%; border-radius: 999px; background: var(--nq-accent); transition: width 0.4s ease; }
+.nq-progress-label { font-family: var(--font-ui); font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--nq-muted); white-space: nowrap; }
+.nq-progress-label strong { color: var(--nq-accent); }
+@media (prefers-reduced-motion: reduce) { .nq-progress-fill { transition: none; } }
+
+/* ---- Reporting form: valid-field tick ---- */
+.nq-valid-tick {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; margin-left: 8px; border-radius: 50%;
+  background: #93BB4A; color: #0F2818; font-size: 11px; line-height: 1; vertical-align: middle;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .nq-valid-tick { animation: nq-tick-pop 0.25s ease both; }
+}
+@keyframes nq-tick-pop { from { transform: scale(0); } to { transform: scale(1); } }

@@ -83,7 +83,7 @@ function getFriendlyErrorMessage(err, context) {
   }
 
   if (err.status === 400 && err.body?.photo) {
-    return 'That photo couldn\u2019t be uploaded \u2014 please make sure it\u2019s a JPG, PNG, or HEIC image under 8MB.'
+    return 'That photo couldn’t be uploaded — please make sure it’s a JPG, PNG, or HEIC image under 8MB.'
   }
 
   if (err.status === 400 && err.body?.report) {
@@ -95,7 +95,7 @@ function getFriendlyErrorMessage(err, context) {
   }
 
   if (err.status === 400) {
-    return 'Some information couldn\u2019t be saved \u2014 please check the form and try again.'
+    return 'Some information couldn’t be saved — please check the form and try again.'
   }
 
   if (err.status === 401 || err.status === 403) {
@@ -106,7 +106,7 @@ function getFriendlyErrorMessage(err, context) {
     return 'Something went wrong on our end. Please try again in a moment.'
   }
 
-  return `${context} didn\u2019t work. Please try again.`
+  return `${context} didn’t work. Please try again.`
 }
 
 function LocationPicker({ position, onPick }) {
@@ -251,7 +251,7 @@ function ReportingForm() {
     for (const file of files) {
       const heic = isHeicFile(file)
       if (!file.type.startsWith('image/') && !heic) {
-        warnings.push(`${file.name} isn\u2019t an image, so it was skipped.`)
+        warnings.push(`${file.name} isn’t an image, so it was skipped.`)
         continue
       }
       if (file.size > MAX_PHOTO_BYTES) {
@@ -376,7 +376,7 @@ function ReportingForm() {
 
     if (failedCount > 0) {
       setError(
-        `Your report was saved, but ${failedCount} of ${photos.length} photo${photos.length === 1 ? '' : 's'} couldn\u2019t be uploaded. ${getFriendlyErrorMessage(lastError, 'Uploading the photo')}`
+        `Your report was saved, but ${failedCount} of ${photos.length} photo${photos.length === 1 ? '' : 's'} couldn’t be uploaded. ${getFriendlyErrorMessage(lastError, 'Uploading the photo')}`
       )
       setSubmitting(false)
       return
@@ -433,6 +433,10 @@ function ReportingForm() {
 
     return (
       <div>
+        <div className="nq-steps" role="progressbar" aria-valuemin={1} aria-valuemax={2} aria-valuenow={2} aria-label="Step 2 of 2: review and submit">
+          <span className="nq-progress-label"><strong>Step 2</strong> of 2 · Review</span>
+          <div className="nq-progress-bar"><div className="nq-progress-fill" style={{ width: '100%' }} /></div>
+        </div>
         <p className="nq-eyebrow">Final check</p>
         <h1 style={{ color: BRAND.text, fontSize: 'clamp(28px, 4vw, 36px)', margin: '0 0 8px' }}>Review your report</h1>
         <p style={{ fontSize: 13, color: BRAND.textMuted, marginBottom: 24 }}>
@@ -585,6 +589,11 @@ function ReportingForm() {
         </p>
       )}
 
+      <div className="nq-steps" role="progressbar" aria-valuemin={1} aria-valuemax={2} aria-valuenow={1} aria-label="Step 1 of 2: nest details">
+        <span className="nq-progress-label"><strong>Step 1</strong> of 2 · Details</span>
+        <div className="nq-progress-bar"><div className="nq-progress-fill" style={{ width: '50%' }} /></div>
+      </div>
+
       <form onSubmit={handleContinueToReview}>
         <div className="nq-glass" style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 16, padding: 'clamp(18px, 3vw, 30px)', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
           <div className="nq-two-col">
@@ -611,7 +620,7 @@ function ReportingForm() {
               </div>
 
               <div style={fieldGroup}>
-                <label style={labelStyle}>Nest shape</label>
+                <label style={labelStyle}>Nest shape{shape && <span className="nq-valid-tick" aria-label="Looks good"><i className="ti ti-check" aria-hidden="true"></i></span>}</label>
                 <select
                   value={shape}
                   onChange={(e) => {
@@ -630,7 +639,7 @@ function ReportingForm() {
               </div>
 
               <div style={fieldGroup}>
-                <label style={labelStyle}>Where is it positioned?</label>
+                <label style={labelStyle}>Where is it positioned?{placement && <span className="nq-valid-tick" aria-label="Looks good"><i className="ti ti-check" aria-hidden="true"></i></span>}</label>
                 <select
                   value={placement}
                   onChange={(e) => {
@@ -677,7 +686,7 @@ function ReportingForm() {
               </div>
 
               <div style={fieldGroup}>
-                <label style={labelStyle}>When did you see this?</label>
+                <label style={labelStyle}>When did you see this?{observedDate && <span className="nq-valid-tick" aria-label="Looks good"><i className="ti ti-check" aria-hidden="true"></i></span>}</label>
                 <input
                   type="date"
                   value={observedDate}
@@ -694,7 +703,7 @@ function ReportingForm() {
             <div>
               <div className="nq-sec"><span className="nq-sec-num" aria-hidden="true">2</span>Where &amp; photos</div>
               <div style={fieldGroup}>
-                <label style={labelStyle}>Nest location</label>
+                <label style={labelStyle}>Nest location{position && <span className="nq-valid-tick" aria-label="Looks good"><i className="ti ti-check" aria-hidden="true"></i></span>}</label>
                 {locating && <p style={{ fontSize: 13, color: BRAND.textMuted }}>Getting your location...</p>}
                 {!locating && (
                   <>
@@ -788,7 +797,7 @@ function ReportingForm() {
                 ))}
                 {hasHeicPhoto && (
                   <p style={{ color: BRAND.textMuted, fontSize: 12, marginTop: 8, marginBottom: 0 }}>
-                    Previews aren{'\u2019'}t available for HEIC photos, but they will still upload correctly.
+                    Previews aren{'’'}t available for HEIC photos, but they will still upload correctly.
                   </p>
                 )}
 
