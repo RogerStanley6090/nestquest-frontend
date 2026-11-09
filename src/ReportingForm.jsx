@@ -129,6 +129,7 @@ function ReportingForm() {
 
   const [speciesList, setSpeciesList] = useState([])
   const [speciesLoaded, setSpeciesLoaded] = useState(false)
+  const [speciesError, setSpeciesError] = useState(false)
 
   const [species, setSpecies] = useState('')
   const [shape, setShape] = useState(guideAnswers.nest_shape || '')
@@ -159,7 +160,9 @@ function ReportingForm() {
   const libraryInputRef = useRef(null)
   const photosRef = useRef(photos)
 
-  useEffect(() => {
+  function loadSpecies() {
+    setSpeciesError(false)
+    setSpeciesLoaded(false)
     publicApi
       .getSpecies()
       .then((data) => {
@@ -176,8 +179,13 @@ function ReportingForm() {
       })
       .catch((err) => {
         console.error('Could not load species list:', err.message)
+        setSpeciesError(true)
       })
       .finally(() => setSpeciesLoaded(true))
+  }
+
+  useEffect(() => {
+    loadSpecies()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -416,6 +424,7 @@ function ReportingForm() {
   const selectedSpeciesName = speciesList.find((s) => s.id === species)?.name || 'Not sure / let a researcher decide'
   const photosFull = photos.length >= MAX_PHOTOS
   const hasHeicPhoto = photos.some((p) => !p.preview)
+  const requiredDone = [shape, placement, observedDate, position].filter(Boolean).length
 
   // ============================================================
   // REVIEW STEP
@@ -595,9 +604,8 @@ function ReportingForm() {
       </div>
 
       <form onSubmit={handleContinueToReview}>
-        <div className="nq-glass" style={{ background: BRAND.card, border: `1px solid ${BRAND.border}`, borderRadius: 16, padding: 'clamp(18px, 3vw, 30px)', boxShadow: '0 4px 20px rgba(0,0,0,0.25)' }}>
-          <div className="nq-two-col">
-            <div>
+        <div className="nq-two-col nq-rform">
+            <div className="nq-glass nq-rcard">
               <div className="nq-sec"><span className="nq-sec-num" aria-hidden="true">1</span>About the nest</div>
               <div style={fieldGroup}>
                 <label style={labelStyle}>Species (if known)</label>
@@ -617,6 +625,18 @@ function ReportingForm() {
                     </option>
                   ))}
                 </select>
+                {speciesError && (
+                  <p role="alert" style={{ fontSize: 12, color: '#E8A33D', margin: '8px 0 0', lineHeight: 1.5 }}>
+                    Couldn’t load the species list. You can still submit this report and a researcher will identify the bird.{' '}
+                    <button
+                      type="button"
+                      onClick={loadSpecies}
+                      style={{ background: 'none', border: 'none', padding: 0, color: BRAND.accent, textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
+                    >
+                      Try again
+                    </button>
+                  </p>
+                )}
               </div>
 
               <div style={fieldGroup}>
@@ -700,7 +720,7 @@ function ReportingForm() {
               </div>
             </div>
 
-            <div>
+            <div className="nq-glass nq-rcard">
               <div className="nq-sec"><span className="nq-sec-num" aria-hidden="true">2</span>Where &amp; photos</div>
               <div style={fieldGroup}>
                 <label style={labelStyle}>Nest location{position && <span className="nq-valid-tick" aria-label="Looks good"><i className="ti ti-check" aria-hidden="true"></i></span>}</label>
@@ -869,31 +889,33 @@ function ReportingForm() {
             </div>
           </div>
 
-          {error && <p style={{ color: '#E4685A', fontSize: 13, marginTop: 4, marginBottom: 16 }}>{error}</p>}
+          {error && <p role="alert" className="nq-rerror">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={locating}
-            className="nq-btn nq-btn-primary"
-            style={{
-              background: locating ? '#6E8A5E' : BRAND.accent,
-              color: '#0F2818',
-              border: 'none',
-              padding: '14px 28px',
-              borderRadius: 999,
-              cursor: locating ? 'default' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 8,
-              width: 'fit-content',
-              marginLeft: 'auto',
-            }}
-          >
-            <i className="ti ti-eye" style={{ fontSize: 16 }} aria-hidden="true"></i>
-            Review report
-          </button>
-        </div>
+          <div className="nq-glass nq-rbar">
+            <p className="nq-rbar-text">
+              <strong>{requiredDone} of 4</strong> required details filled in. Photos and notes are optional.
+            </p>
+            <button
+              type="submit"
+              disabled={locating}
+              className="nq-btn nq-btn-primary"
+              style={{
+                background: locating ? '#6E8A5E' : BRAND.accent,
+                color: '#0F2818',
+                border: 'none',
+                padding: '14px 28px',
+                borderRadius: 999,
+                cursor: locating ? 'default' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <i className="ti ti-eye" style={{ fontSize: 16 }} aria-hidden="true"></i>
+              Review report
+            </button>
+          </div>
       </form>
     </div>
   )

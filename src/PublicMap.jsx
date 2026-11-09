@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -211,74 +210,36 @@ function PublicMap() {
     [plottableReports]
   )
 
-  const noticeBox = {
-    background: BRAND.card,
-    border: `1px solid ${BRAND.border}`,
-    borderRadius: 8,
-    padding: '12px 14px',
-    marginBottom: 18,
-    fontSize: 13,
-    color: BRAND.textMuted,
-    lineHeight: 1.5,
-  }
-
-  function chipStyle(selected, color) {
-    return {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 7,
-      padding: '8px 14px',
-      borderRadius: 20,
-      border: `1px solid ${selected ? color : BRAND.border}`,
-      background: selected ? color : BRAND.card,
-      color: selected ? '#111' : BRAND.text,
-      fontSize: 13,
-      cursor: 'pointer',
-    }
-  }
-
   return (
     <div>
-      <style>{`@keyframes nq-spin { to { transform: rotate(360deg); } }`}</style>
-
-      <Link
-        to="/"
-        style={{ fontSize: 13, color: BRAND.accent, textDecoration: 'none', display: 'inline-block', marginBottom: 12 }}
-      >
-        &larr; Back to Home
-      </Link>
-
-      <h2>Nest Map</h2>
+      <div className="nq-dash-head">
+        <div>
+          <p className="nq-eyebrow">Public map</p>
+          <h1 style={{ color: BRAND.text, fontSize: 'clamp(28px, 4vw, 36px)', margin: 0 }}>Nest map</h1>
+        </div>
+        {!loading && !usingMockData && (
+          <span className="nq-dash-count">
+            {plottableReports.length} verified {plottableReports.length === 1 ? 'nest' : 'nests'}
+          </span>
+        )}
+      </div>
 
       {/* Privacy notice */}
-      <div style={noticeBox}>
-        <strong style={{ color: BRAND.text }}>Location privacy:</strong>{' '}
-        Locations shown on this map are approximate. Exact nest locations are hidden for
-        privacy and conservation purposes.
+      <div className="nq-dash-banner" style={{ marginBottom: 18 }}>
+        <span>
+          <i className="ti ti-lock" aria-hidden="true" />
+          <strong style={{ color: BRAND.text }}>Location privacy:</strong>{' '}
+          Locations shown on this map are approximate. Exact nest locations are hidden for
+          privacy and conservation purposes.
+        </span>
       </div>
 
       {/* Loading state (the server can take a while to wake up) */}
       {loading && (
-        <div
-          role="status"
-          style={{ ...noticeBox, display: 'flex', alignItems: 'center', gap: 12 }}
-        >
-          <span
-            aria-hidden="true"
-            style={{
-              width: 18,
-              height: 18,
-              border: `2px solid ${BRAND.border}`,
-              borderTopColor: BRAND.accent,
-              borderRadius: '50%',
-              display: 'inline-block',
-              flexShrink: 0,
-              animation: 'nq-spin 0.8s linear infinite',
-            }}
-          />
+        <div className="nq-dash-banner" role="status" style={{ marginBottom: 18 }}>
           <span>
-            <strong style={{ color: BRAND.text }}>Loading nest reports…</strong>
-            <br />
+            <i className="ti ti-loader-2" aria-hidden="true" />
+            <strong style={{ color: BRAND.text }}>Loading nest reports…</strong>{' '}
             The first load can take up to a minute while the server wakes up.
           </span>
         </div>
@@ -308,10 +269,7 @@ function PublicMap() {
             type="button"
             aria-pressed={selectedSpecies === 'all'}
             onClick={() => setSelectedSpecies('all')}
-            style={{
-              ...chipStyle(selectedSpecies === 'all', BRAND.accent),
-              color: selectedSpecies === 'all' ? '#0F2818' : BRAND.text,
-            }}
+            className="nq-dpill"
           >
             All
           </button>
@@ -326,7 +284,13 @@ function PublicMap() {
                 type="button"
                 aria-pressed={selected}
                 onClick={() => setSelectedSpecies(name)}
-                style={chipStyle(selected, color)}
+                className="nq-dpill"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  ...(selected ? { background: color, borderColor: color, color: '#111' } : {}),
+                }}
               >
                 <span
                   aria-hidden="true"
@@ -371,7 +335,7 @@ function PublicMap() {
         </StateMessage>
       )}
 
-      <div className="nq-map">
+      <div className="nq-map nq-map-frame">
         {loading && <div className="nq-map-skeleton" aria-hidden="true" />}
       <MapContainer
         center={[-36.8523, 174.7642]}
