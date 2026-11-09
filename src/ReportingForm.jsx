@@ -718,6 +718,18 @@ function ReportingForm() {
                   style={fieldStyle}
                 />
               </div>
+
+              <div style={fieldGroup}>
+                <label style={labelStyle}>Notes (optional)</label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => {
+                    setNotes(e.target.value)
+                    markDirty()
+                  }}
+                  style={{ ...fieldStyle, minHeight: 80 }}
+                />
+              </div>
             </div>
 
             <div className="nq-glass nq-rcard">
@@ -860,18 +872,6 @@ function ReportingForm() {
                     ))}
                   </div>
                 )}
-              </div>
-
-              <div style={fieldGroup}>
-                <label style={labelStyle}>Notes (optional)</label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => {
-                    setNotes(e.target.value)
-                    markDirty()
-                  }}
-                  style={{ ...fieldStyle, minHeight: 80 }}
-                />
               </div>
 
               <div style={fieldGroup}>
