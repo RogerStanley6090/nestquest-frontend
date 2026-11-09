@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { publicApi } from './api/client.js'
+import StateMessage from './StateMessage.jsx'
 
 const MOCK_REPORTS = [
   {
@@ -285,29 +286,15 @@ function PublicMap() {
 
       {/* Could not reach the server */}
       {usingMockData && !loading && (
-        <div
-          role="alert"
-          style={{ ...noticeBox, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}
+        <StateMessage
+          variant="error"
+          icon="ti-cloud-off"
+          title="Couldn’t reach the server"
+          actionLabel="Try again"
+          onAction={retry}
         >
-          <span>
-            Couldn’t reach the server, so this map is showing placeholder data.
-          </span>
-          <button
-            type="button"
-            onClick={retry}
-            style={{
-              padding: '7px 16px',
-              borderRadius: 8,
-              border: `1px solid ${BRAND.accent}`,
-              background: 'transparent',
-              color: BRAND.accent,
-              fontSize: 13,
-              cursor: 'pointer',
-            }}
-          >
-            Try again
-          </button>
-        </div>
+          This map is showing placeholder data for now. Check your connection, or give the server a moment to wake up.
+        </StateMessage>
       )}
 
       {/* Species filters (each chip colour matches its map marker) */}
@@ -372,13 +359,16 @@ function PublicMap() {
 
       {/* Empty state */}
       {!loading && !usingMockData && plottableReports.length === 0 && (
-        <div style={noticeBox}>
-          <strong style={{ color: BRAND.text }}>No verified nests to show yet.</strong>
-          <br />
+        <StateMessage
+          icon="ti-map-pin-off"
+          title={selectedSpecies === 'all' ? 'No verified nests to show yet' : `No verified ${selectedSpecies} nests yet`}
+          actionLabel={selectedSpecies === 'all' ? undefined : 'Show all species'}
+          onAction={() => setSelectedSpecies('all')}
+        >
           {selectedSpecies === 'all'
             ? 'Reports appear here after a researcher has verified them.'
-            : 'Try another species, or choose All.'}
-        </div>
+            : 'Try another species, or show all species on the map.'}
+        </StateMessage>
       )}
 
       <div className="nq-map">

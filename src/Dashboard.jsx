@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { researcherApi } from './api/client.js'
 import './dashboard.css'
+import StateMessage from './StateMessage.jsx'
 
 const MOCK_REPORTS = [
   { id: 1, species: 'Blackbird', location: 'Henderson Park', date: '12 Aug', status: 'unverified' },
@@ -206,7 +207,7 @@ function Dashboard() {
               type="button"
               onClick={() => setStatusFilter(isActive ? 'all' : f.key)}
               aria-pressed={isActive}
-              className={`nq-dstat${isActive ? ' nq-dstat-active' : ''}`}
+              className={`nq-dstat${isActive ? ' nq-dstat-active' : ''}${loading ? ' nq-dstat-skel' : ''}`}
               style={{ '--c': meta.bg, '--ct': meta.text }}
             >
               <div className="nq-dstat-top">
@@ -215,7 +216,7 @@ function Dashboard() {
                   <i className={`ti ${meta.icon}`} style={{ fontSize: 15 }}></i>
                 </span>
               </div>
-              <span className="nq-dstat-num">{statusCounts[f.key] || 0}</span>
+              <span className="nq-dstat-num">{loading ? '' : statusCounts[f.key] || 0}</span>
             </button>
           )
         })}
@@ -317,10 +318,19 @@ function Dashboard() {
           </table>
         </div>
         {!loading && visibleReports.length === 0 && (
-          <div className="nq-dempty">
-            <i className="ti ti-inbox" aria-hidden="true"></i>
-            <p style={{ margin: 0 }}>No reports match this filter.</p>
-          </div>
+          <StateMessage
+            icon="ti-inbox"
+            title={reports.length === 0 ? 'No reports yet' : 'No reports match your filters'}
+            actionLabel={reports.length > 0 ? 'Clear filters' : undefined}
+            onAction={() => {
+              setStatusFilter('all')
+              setSearchTerm('')
+            }}
+          >
+            {reports.length === 0
+              ? 'New nest reports will show up here as soon as they are submitted.'
+              : 'Try a different status or search term, or clear the filters to see everything.'}
+          </StateMessage>
         )}
       </div>
     </div>
