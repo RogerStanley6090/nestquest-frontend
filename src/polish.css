@@ -195,3 +195,23 @@ a[role="button"] {
   .nq-valid-tick { animation: nq-tick-pop 0.25s ease both; }
 }
 @keyframes nq-tick-pop { from { transform: scale(0); } to { transform: scale(1); } }
+
+/* ---- Reporting form: two cards + action bar ---- */
+.nq-rform { align-items: start; gap: 20px; }
+.nq-rcard {
+  border: 1px solid var(--nq-border);
+  border-radius: 16px;
+  padding: clamp(18px, 3vw, 28px);
+}
+.nq-rbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  margin-top: 20px; padding: 16px 22px;
+  border: 1px solid var(--nq-border); border-radius: 16px;
+}
+.nq-rbar-text { margin: 0; font-size: 14px; color: var(--nq-muted); line-height: 1.5; }
+.nq-rbar-text strong { color: var(--nq-accent); font-family: var(--font-ui); letter-spacing: 0.04em; }
+.nq-rerror { color: #E4685A; font-size: 13px; margin: 16px 0 0; }
+
+/* ---- Map page: header banner icons + framed map ---- */
+.nq-dash-banner strong { font-weight: 700; }
+.nq-map-frame { margin-top: 4px; }
